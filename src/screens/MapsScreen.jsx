@@ -86,8 +86,7 @@ const MapsScreen = ({ navigation }) => {
             Back
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity
-          onPress={() => navigation.navigate('Notifications')}
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
           style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}
         >
           <Ionicons name="notifications" size={20} color="white" />

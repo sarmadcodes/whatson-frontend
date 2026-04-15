@@ -50,12 +50,11 @@ const NotificationsScreen = ({ navigation }) => {
       
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity 
-          style={styles.iconBtn}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="chevron-back" size={20} color="#000" />
-        </TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
+                  <Text style={{ fontSize: 16, fontWeight: '700', color: '#111' }}>
+                    Back
+                  </Text>
+                </TouchableOpacity>
 
         <View style={styles.headerRight}>
           {/* <TouchableOpacity style={styles.iconBtn}>

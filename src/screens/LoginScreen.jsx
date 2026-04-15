@@ -7,6 +7,7 @@ import {
   TextInput,
   TouchableOpacity,
   StatusBar,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,15 +28,15 @@ const LoginScreen = ({ navigation }) => {
         }}
       >
         {/* <Ionicons name='pin-sharp' size={20} color='red' /> */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: '#111' }}>
             Back
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}
+          style={{ backgroundColor: 'transparent', borderRadius: 50, padding: 8 }}
         >
-          <Ionicons name="settings" size={20} color="white" />
+          {/* <Ionicons name="settings" size={20} color="white" /> */}
         </TouchableOpacity>
       </View>
       <Text
@@ -53,7 +54,12 @@ const LoginScreen = ({ navigation }) => {
 
         {/* Header */}
         <View style={styles.header}>
-          <Ionicons name='happy-sharp' size={30} color='#012D2E' />
+          <View style={styles.iconWrapper}>
+                     <Image 
+                        source={require('../assets/icon1.png')} 
+                        style={styles.iconImage} 
+                  />
+                    </View>
           <Text style={styles.title}>Welcome Back</Text>
           <Text style={styles.subtitle}>
             Sign in to manage your venue
@@ -295,4 +301,20 @@ const styles = StyleSheet.create({
     borderRadius: 50,
     backgroundColor: '#666',
   },
+  iconWrapper: {
+  width: 55,
+  height: 55,
+  borderRadius: 10,
+  overflow: 'hidden',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding:3,
+  backgroundColor: '#74C33C',
+},
+
+iconImage: {
+  width: '90%',
+  height: '90%',
+  resizeMode: 'contain',
+},
 });

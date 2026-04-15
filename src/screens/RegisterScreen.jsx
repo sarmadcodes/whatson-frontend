@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   StatusBar,
   ScrollView,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -29,15 +30,15 @@ const SignupScreen = ({ navigation }) => {
         }}
       >
         {/* <Ionicons name='pin-sharp' size={20} color='red' /> */}
-        <TouchableOpacity>
+        <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={{ fontSize: 16, fontWeight: '700', color: '#111' }}>
             Back
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
-          style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}
+          style={{ backgroundColor: 'transparent', borderRadius: 50, padding: 8 }}
         >
-          <Ionicons name="settings" size={20} color="white" />
+          {/* <Ionicons name="settings" size={20} color="white" /> */}
         </TouchableOpacity>
       </View>
       <Text
@@ -55,7 +56,13 @@ const SignupScreen = ({ navigation }) => {
       <View style={styles.content}>
         {/* Header */}
         <View style={styles.header}>
-          <Ionicons name='happy-sharp' size={30} color='#012D2E' />
+          {/* <Ionicons name='happy-sharp' size={30} color='#012D2E' /> */}
+          <View style={styles.iconWrapper}>
+           <Image 
+              source={require('../assets/icon1.png')} 
+              style={styles.iconImage} 
+        />
+          </View>
           <Text style={styles.title}>Join What's On</Text>
           <Text style={styles.subtitle}>Join the fashion community today</Text>
         </View>
@@ -162,7 +169,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 25, backgroundColor: '#fff' },
   content: { flex: 1, justifyContent: 'center' },
 
-  header: { alignItems:'center', marginBottom: 15, marginTop:10 },
+  header: { alignItems:'center', marginBottom: 15, marginTop:15 },
   title: {
     fontSize: 22,
     fontWeight: 'bold',
@@ -345,4 +352,20 @@ const styles = StyleSheet.create({
     color: '#666',
     flex: 1,
   },
+  iconWrapper: {
+  width: 55,
+  height: 55,
+  borderRadius: 10,
+  overflow: 'hidden',
+  justifyContent: 'center',
+  alignItems: 'center',
+  padding:3,
+  backgroundColor: '#74C33C',
+},
+
+iconImage: {
+  width: '90%',
+  height: '90%',
+  resizeMode: 'contain',
+},
 });

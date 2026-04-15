@@ -99,10 +99,10 @@ const BrowseScreen = ({navigation}) => {
             Back
           </Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('NotificationSettings')}
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
           style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}
         >
-          <Ionicons name="settings" size={20} color="white" />
+          <Ionicons name="notifications" size={20} color="white" />
         </TouchableOpacity>
       </View>
 

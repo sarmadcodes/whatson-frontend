@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
   StatusBar,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -52,9 +53,25 @@ const SearchScreen = ({ navigation }) => {
           {/* <Ionicons name="chevron-back" size={24} color="#111" /> */}
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
-        <Text style={styles.screenTitle}>Search</Text>
-        <View style={{ width: 60 }} /> {/* Spacer to balance header */}
+        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
+          style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}
+          >
+          <Ionicons name="notifications" size={20} color="white" />
+        </TouchableOpacity>
       </View>
+
+      <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={{ paddingBottom: '40%' }}>
+                <Text
+                  style={{
+                    fontSize: 25,
+                    fontWeight: '700',
+                    color: '#008E6D',
+                    marginTop: 20,
+                  }}
+                >
+                  Search
+                </Text>
 
       {/* Search Bar Section */}
       <View style={styles.searchContainer}>
@@ -104,6 +121,9 @@ const SearchScreen = ({ navigation }) => {
           )}
         />
       </View>
+
+      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -114,12 +134,14 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+    paddingTop:10,
+    paddingHorizontal:15
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 15,
+    // paddingHorizontal: 15,
     paddingVertical: 10,
   },
   backButton: {
@@ -138,7 +160,7 @@ const styles = StyleSheet.create({
     color: '#012D2E',
   },
   searchContainer: {
-    paddingHorizontal: 15,
+    // paddingHorizontal: 15,
     marginVertical: 10,
   },
   searchBar: {
@@ -156,7 +178,7 @@ const styles = StyleSheet.create({
   },
   resultsContainer: {
     flex: 1,
-    paddingHorizontal: 15,
+    // paddingHorizontal: 15,
     marginTop: 10,
   },
   resultsHeader: {
