@@ -6,17 +6,17 @@ const GAP = 6;
 const PADDING = 10;
 const BUTTON_WIDTH = (width - PADDING * 3 - GAP * 3) / 4;
 
-const FilterGroup = ({ items }) => {
-  
-
-  // Only one selected ID at a time
-  const [selectedId, setSelectedId] = useState(null);
+const FilterGroup = ({ items, selectedId: controlledSelectedId, onSelect }) => {
+  const [internalSelectedId, setInternalSelectedId] = useState(null);
+  const selectedId = controlledSelectedId ?? internalSelectedId;
 
   const selectFilter = (id) => {
-    if (selectedId === id) {
-      setSelectedId(null);
-    } else {
-      setSelectedId(id);
+    const nextValue = selectedId === id ? 'All' : id;
+    if (controlledSelectedId === undefined) {
+      setInternalSelectedId(selectedId === id ? null : id);
+    }
+    if (onSelect) {
+      onSelect(nextValue);
     }
   };
 

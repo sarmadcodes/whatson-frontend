@@ -1,53 +1,54 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, ActivityIndicator } from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import EventCard from '../components/EventCard';
 import Ionicons from '@react-native-vector-icons/ionicons';
+import { fetchEvents, Event } from '../services/eventService';
 
-const CategoryDetailScreen = ({ route, navigation }) => {
-  // Extract the category name from params
+const CategoryDetailScreen = ({ route, navigation }: { route: any; navigation: any }) => {
   const { categoryName } = route.params;
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Comprehensive dummy data
-  const allEvents = [
-    { id: '1', title: 'Live Rock Concert', category: 'Live Music', image: 'https://picsum.photos/200', location: 'London', timeLabel: '8PM' },
-    { id: '2', title: 'Jazz Night', category: 'Live Music', image: 'https://picsum.photos/201', location: 'Belfast', timeLabel: '7PM' },
-    { id: '3', title: 'Techno Underground', category: 'DJ Nightlife', image: 'https://picsum.photos/202', location: 'Manchester', timeLabel: '11PM' },
-    { id: '4', title: 'House Mix 101', category: 'DJ Nightlife', image: 'https://picsum.photos/203', location: 'London', timeLabel: '10PM' },
-    { id: '5', title: 'Standup Special', category: 'Comedy', image: 'https://picsum.photos/204', location: 'Bristol', timeLabel: '6PM' },
-    { id: '6', title: 'Street Food Fest', category: 'Food & drink', image: 'https://picsum.photos/205', location: 'London', timeLabel: '1PM' },
-  ];
-
-  // Filter logic: Only show events matching the category
-  const filteredEvents = allEvents.filter(event => event.category === categoryName);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchEvents({ category: categoryName, limit: 100 });
+        setEvents(data);
+      } catch (error) {
+        console.error('Category detail load error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [categoryName]);
 
   return (
     <View style={styles.container}>
-      <ScreenWrapper
-        imageSource={require('../assets/homebg.png')}
-        backgroundColor="#FFFFFF"
-      >
-        {/* Header Section */}
+      <ScreenWrapper imageSource={require('../assets/homebg.png')} backgroundColor="#FFFFFF">
         <View style={styles.header}>
           <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
             <Ionicons name="arrow-back" size={24} color="#fff" />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>{categoryName}</Text>
-          <View style={{ width: 40 }} /> {/* Spacer for centering */}
+          <View style={{ width: 40 }} />
         </View>
 
         <View style={styles.content}>
           <Text style={styles.sectionTitle}>{categoryName} Near You</Text>
-          
-          {filteredEvents.length > 0 ? (
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#008E6D" style={{ marginTop: 50 }} />
+          ) : events.length > 0 ? (
             <FlatList
-              data={filteredEvents}
-              keyExtractor={(item) => item.id}
-              numColumns={2} // Grid layout
+              data={events}
+              keyExtractor={(item) => item._id}
+              numColumns={2}
               columnWrapperStyle={styles.row}
               renderItem={({ item }) => (
                 <View style={styles.cardContainer}>
-                    <EventCard data={item} onPress={() => navigation.navigate('Innerevetscreen')} />
+                  <EventCard data={item} onPress={() => navigation.navigate('Innerevetscreen', { eventId: item._id })} />
                 </View>
               )}
               showsVerticalScrollIndicator={false}
@@ -102,7 +103,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   cardContainer: {
-    width: '48%', // Ensures 2 items per row
+    width: '48%',
     marginBottom: 15,
   },
   emptyContainer: {
@@ -115,5 +116,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: '#666',
     marginTop: 10,
-  }
+  },
 });

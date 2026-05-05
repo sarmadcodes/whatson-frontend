@@ -1,4 +1,6 @@
+import React, { useEffect, useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
   FlatList,
   ScrollView,
   StatusBar,
@@ -7,72 +9,51 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import React from 'react';
 import Ionicons from '@react-native-vector-icons/ionicons';
 import CategoryCard from '../components/CategoryCard';
 import EventList from '../components/EventList';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { fetchEvents, Event } from '../services/eventService';
 
-const BrowseScreen = ({navigation}) => {
+const BrowseScreen = ({ navigation }: { navigation: any }) => {
   const catedata = [
-    { icon: 'musical-notes-outline', label: 'Live Music', count: 8 },
-    { icon: 'headset-outline', label: 'DJ Nightlife', count: 10 },
-    { icon: 'sparkles-outline', label: 'Events', count: 15 },
-    { icon: 'restaurant-outline', label: 'Food & drink', count: 8 },
-    { icon: 'people-outline', label: 'Clubs', count: 18 },
-    { icon: 'happy-outline', label: 'Comedy', count: 20 },
+    { icon: 'musical-notes-outline', label: 'Live Music' },
+    { icon: 'headset-outline', label: 'DJ Nightlife' },
+    { icon: 'sparkles-outline', label: 'Events' },
+    { icon: 'restaurant-outline', label: 'Food & Drink' },
+    { icon: 'people-outline', label: 'Clubs' },
+    { icon: 'happy-outline', label: 'Comedy' },
   ];
 
-  const eventsData = [
-  {
-    id: '1',
-    title: 'Neon Underground Techno',
-    venue: 'The Vault',
-    day: 'Tonight',
-    time: '11:00 PM',
-    price: '15',
-    isFree: false,
-    imageUrl: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRuqLZUQio_aqdqSSyUZ1P8B8OPG5HD8TrQeA&s',
-  },
-  {
-    id: '2',
-    title: 'Acoustic Coffee Sessions',
-    venue: 'The Roasted Bean',
-    day: 'Tomorrow',
-    time: '2:00 PM',
-    isFree: true,
-    imageUrl: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?q=80&w=200&auto=format&fit=crop',
-  },
-  {
-    id: '3',
-    title: 'Retro Arcade Tournament',
-    venue: 'Pixel Bar',
-    day: 'Friday',
-    time: '7:00 PM',
-    price: '10',
-    isFree: false,
-    imageUrl: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=200&auto=format&fit=crop',
-  },
-  {
-    id: '4',
-    title: 'Jazz & Wine Tasting',
-    venue: 'The Velvet Lounge',
-    day: 'Saturday',
-    time: '8:30 PM',
-    price: '45',
-    isFree: false,
-    imageUrl: 'https://images.unsplash.com/photo-1511192336575-5a79af67a629?q=80&w=200&auto=format&fit=crop',
-  },
-  {
-    id: '5',
-    title: 'Sunset Rooftop Yoga',
-    venue: 'Sky Garden',
-    day: 'Sunday',
-    time: '6:00 PM',
-    isFree: true,
-    imageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?q=80&w=200&auto=format&fit=crop',
-  }
-];
+  const [events, setEvents] = useState<Event[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchEvents({ limit: 100 });
+        setEvents(data);
+      } catch (error) {
+        console.error('Browse load error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const categoryCounts = useMemo(() => {
+    return catedata.reduce<Record<string, number>>((acc, item) => {
+      acc[item.label] = events.filter(event => event.category === item.label).length;
+      return acc;
+    }, {});
+  }, [events]);
+
+  const filteredEvents = useMemo(() => {
+    if (selectedCategory === 'All') return events;
+    return events.filter(event => event.category === selectedCategory);
+  }, [events, selectedCategory]);
 
   return (
     <SafeAreaView
@@ -84,7 +65,7 @@ const BrowseScreen = ({navigation}) => {
       }}
     >
       <StatusBar barStyle="dark-content" backgroundColor="white" />
-      
+
       <View
         style={{
           flexDirection: 'row',
@@ -93,13 +74,11 @@ const BrowseScreen = ({navigation}) => {
           paddingVertical: 5,
         }}
       >
-        {/* <Ionicons name='pin-sharp' size={20} color='red' /> */}
         <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#111' }}>
-            Back
-          </Text>
+          <Text style={{ fontSize: 16, fontWeight: '700', color: '#111' }}>Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Notifications')}
           style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}
         >
           <Ionicons name="notifications" size={20} color="white" />
@@ -108,35 +87,44 @@ const BrowseScreen = ({navigation}) => {
 
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={{ paddingBottom: '40%' }}>
-          <Text
-            style={{
-              fontSize: 25,
-              fontWeight: '700',
-              color: '#008E6D',
-              marginTop: 20,
-            }}
-          >
-            Browse
-          </Text>{' '}
-          <Text style={{ fontSize: 12, color: '#555' }}>
-            Explore by category
-          </Text>
+          <Text style={{ fontSize: 25, fontWeight: '700', color: '#008E6D', marginTop: 20 }}>Browse</Text>
+          <Text style={{ fontSize: 12, color: '#555' }}>Explore by category</Text>
+
           <View style={styles.container}>
             {catedata.map((item, index) => (
-              <View key={index} style={{width:'30%', marginBottom:20}}>
-                <CategoryCard {...item} onPress={() => navigation.navigate('Categorydetails', { categoryName: item.label })} />
+              <View key={index} style={{ width: '30%', marginBottom: 20 }}>
+                <CategoryCard
+                  {...item}
+                  count={categoryCounts[item.label] || 0}
+                  onPress={() => {
+                    setSelectedCategory(item.label);
+                    navigation.navigate('Categorydetails', { categoryName: item.label });
+                  }}
+                />
               </View>
             ))}
           </View>
 
-          <Text style={{fontSize:16, fontWeight:'700', color:'#012D2E',}}>Live Music</Text> 
-          <FlatList
-        data={eventsData}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => <EventList item={item} onPress={() => navigation.navigate('Innerevetscreen')} />}
-        contentContainerStyle={{ paddingVertical: 10 }}
-      />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#012D2E' }}>
+              {selectedCategory === 'All' ? 'All Events' : selectedCategory}
+            </Text>
+            {loading && <ActivityIndicator size="small" color="#008E6D" />}
+          </View>
 
+          <FlatList
+            data={filteredEvents}
+            keyExtractor={(item) => item._id}
+            renderItem={({ item }) => (
+              <EventList
+                item={item}
+                onPress={() => navigation.navigate('Innerevetscreen', { eventId: item._id })}
+              />
+            )}
+            contentContainerStyle={{ paddingVertical: 10 }}
+            ListEmptyComponent={!loading ? <Text style={{ color: '#999', marginTop: 12 }}>No events found</Text> : null}
+            scrollEnabled={false}
+          />
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -150,6 +138,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
-    marginVertical:15
+    marginVertical: 15,
   },
 });

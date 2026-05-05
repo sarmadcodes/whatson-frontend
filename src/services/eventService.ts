@@ -19,6 +19,9 @@ export interface Event {
   openingHours: { day: string; hours: string }[];
   isFeatured: boolean;
   tags: string[];
+  latitude: number | null;
+  longitude: number | null;
+  distanceKm?: number;
   createdAt: string;
 }
 
@@ -44,4 +47,21 @@ export const fetchEventById = async (id: string): Promise<Event> => {
   const headers = await getAuthHeader();
   const response = await axios.get(`${API_BASE_URL}/events/${id}`, { headers });
   return response.data.event;
+};
+
+// Get nearby events; optionally sort/filter by user coordinates.
+export const fetchNearbyEvents = async (
+  userLat?: number,
+  userLng?: number,
+  radiusKm: number = 50,
+): Promise<Event[]> => {
+  const headers = await getAuthHeader();
+  const params: Record<string, any> = {};
+  if (userLat !== undefined && userLng !== undefined) {
+    params.lat = userLat;
+    params.lng = userLng;
+    params.radiusKm = radiusKm;
+  }
+  const response = await axios.get(`${API_BASE_URL}/events/nearby`, { headers, params });
+  return response.data.events;
 };

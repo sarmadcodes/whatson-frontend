@@ -1,7 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  StyleSheet, Text, View, TextInput, TouchableOpacity,
-  FlatList, StatusBar, ActivityIndicator,
+  ActivityIndicator,
+  FlatList,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Ionicons from '@react-native-vector-icons/ionicons';
@@ -14,19 +20,45 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
 
-  const handleSearch = useCallback(async () => {
-    if (!searchQuery.trim()) return;
+  useEffect(() => {
+    const query = searchQuery.trim();
+    if (!query) {
+      setResults([]);
+      setSearched(false);
+      setLoading(false);
+      return;
+    }
+
+    const timer = setTimeout(async () => {
+      setLoading(true);
+      setSearched(true);
+      try {
+        const data = await fetchEvents({ search: query, limit: 100 });
+        setResults(data);
+      } catch (error) {
+        console.error('Search error:', error);
+      } finally {
+        setLoading(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  const handleSearchNow = async () => {
+    const query = searchQuery.trim();
+    if (!query) return;
     setLoading(true);
     setSearched(true);
     try {
-      const data = await fetchEvents({ search: searchQuery.trim() });
+      const data = await fetchEvents({ search: query, limit: 100 });
       setResults(data);
     } catch (error) {
       console.error('Search error:', error);
     } finally {
       setLoading(false);
     }
-  }, [searchQuery]);
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -36,8 +68,10 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
-          style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Notifications')}
+          style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}
+        >
           <Ionicons name="notifications" size={20} color="white" />
         </TouchableOpacity>
       </View>
@@ -53,7 +87,6 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
             style={styles.input}
             value={searchQuery}
             onChangeText={setSearchQuery}
-            onSubmitEditing={handleSearch}
             returnKeyType="search"
             autoFocus
           />
@@ -63,6 +96,10 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
             </TouchableOpacity>
           )}
         </View>
+
+        <TouchableOpacity onPress={handleSearchNow} style={{ marginTop: 10, alignSelf: 'flex-end' }}>
+          <Text style={{ color: '#008E6D', fontWeight: '700' }}>Search now</Text>
+        </TouchableOpacity>
       </View>
 
       <View style={styles.resultsContainer}>
@@ -72,9 +109,7 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
           <>
             {searched && (
               <View style={styles.resultsHeader}>
-                <Text style={styles.resultsTitle}>
-                  {results.length > 0 ? 'Results' : 'No results found'}
-                </Text>
+                <Text style={styles.resultsTitle}>{results.length > 0 ? 'Results' : 'No results found'}</Text>
                 <Text style={styles.resultsCount}>{results.length} found</Text>
               </View>
             )}
