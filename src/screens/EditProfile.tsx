@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   StyleSheet,
   View,
@@ -12,6 +12,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { launchImageLibrary } from 'react-native-image-picker';
+import axios from 'axios';
+import { API_BASE_URL } from '../config/api';
+import { getToken, saveAuth } from '../store/authStore';
 
 const EditProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
@@ -21,16 +24,22 @@ const EditProfile = () => {
   );
 
   const [formData, setFormData] = useState({
-    userName: '',
-    lastName: '',
-    bio:
-      "Lorem Ipsum is simply dummy text of the printing and typesetting industry.",
+    fullName: '',
+    username: '',
+    bio: 'Lorem Ipsum is simply dummy text of the printing and typesetting industry.',
     website: '',
   });
+  const [saving, setSaving] = useState(false);
 
   const MAX_BIO = 200;
 
-  const toggleEdit = () => setIsEditing(!isEditing);
+  const toggleEdit = async () => {
+    if (isEditing) {
+      await saveProfile();
+    } else {
+      setIsEditing(true);
+    }
+  };
 
   const pickImage = () => {
     if (!isEditing) return;
@@ -42,6 +51,68 @@ const EditProfile = () => {
         }
       }
     );
+  };
+
+  // Load current profile
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) return;
+        const res = await axios.get(`${API_BASE_URL}/users/me`, { headers: { Authorization: `Bearer ${token}` } });
+        if (!mounted) return;
+        const user = res.data.user;
+        setFormData({ fullName: user.fullName || '', username: user.username || '', bio: user.bio || '', website: user.website || '' });
+        if (user.avatar) setProfileImage(user.avatar);
+      } catch (err) {
+        console.warn('Failed to load profile', err?.message || err);
+      }
+    })();
+    return () => { mounted = false; };
+  }, []);
+
+  const uploadImageToServer = async (uri) => {
+    if (!uri || uri.startsWith('http')) return uri;
+    const token = await getToken();
+    const form = new FormData();
+    const filename = uri.split('/').pop();
+    const match = filename?.match(/\.(\w+)$/);
+    const type = match ? `image/${match[1]}` : 'image/jpeg';
+    form.append('file', { uri, name: filename, type } as any);
+
+    const res = await fetch(`${API_BASE_URL}/uploads`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'multipart/form-data' },
+      body: form,
+    });
+    const data = await res.json();
+    if (data?.url) return data.url;
+    throw new Error('Upload failed');
+  };
+
+  const saveProfile = async () => {
+    setSaving(true);
+    try {
+      let avatarUrl = profileImage;
+      if (profileImage && !profileImage.startsWith('http')) {
+        avatarUrl = await uploadImageToServer(profileImage);
+      }
+      const token = await getToken();
+      if (!token) throw new Error('Not authenticated');
+      const payload = { fullName: formData.fullName, username: formData.username, bio: formData.bio, website: formData.website, avatar: avatarUrl };
+      const res = await axios.put(`${API_BASE_URL}/users/me`, payload, { headers: { Authorization: `Bearer ${token}` } });
+      const updated = res.data.user;
+      // update local storage user copy
+      await saveAuth(token, updated);
+      setFormData({ fullName: updated.fullName || '', username: updated.username || '', bio: updated.bio || '', website: updated.website || '' });
+      if (updated.avatar) setProfileImage(updated.avatar);
+      setIsEditing(false);
+    } catch (err) {
+      console.warn('Save profile failed', err?.message || err);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleBioChange = text => {
@@ -99,8 +170,8 @@ const EditProfile = () => {
                 editable={isEditing}
                 placeholder="Your Name"
                 placeholderTextColor="#aaa"
-                value={formData.userName}
-                onChangeText={t => setFormData({ ...formData, userName: t })}
+                value={formData.fullName}
+                onChangeText={t => setFormData({ ...formData, fullName: t })}
               />
             </View>
           </View>
@@ -116,8 +187,8 @@ const EditProfile = () => {
                 editable={isEditing}
                 placeholder="Username"
                 placeholderTextColor="#aaa"
-                value={formData.lastName}
-                onChangeText={t => setFormData({ ...formData, lastName: t })}
+                value={formData.username}
+                onChangeText={t => setFormData({ ...formData, username: t })}
               />
             </View>
           </View>

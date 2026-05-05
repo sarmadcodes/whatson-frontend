@@ -15,7 +15,7 @@ import EventList from '../components/EventList';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Linking } from 'react-native';
 
-const MapsScreen = ({ navigation }) => {
+const MapsScreen = ({ navigation }: any) => {
   const [searchQuery, setSearchQuery] = useState('');
   
   const openMap = () => {
@@ -93,85 +93,85 @@ const MapsScreen = ({ navigation }) => {
         </TouchableOpacity>
       </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ paddingBottom: '40%' }}>
-          <Text
-            style={{
-              fontSize: 25,
-              fontWeight: '700',
-              color: '#008E6D',
-              marginTop: 20,
-            }}
-          >
-            Map
-          </Text>
+      <FlatList
+        data={eventsData}
+        keyExtractor={item => item.id}
+        renderItem={({ item }) => (
+          <EventList
+            item={item}
+            onPress={() => navigation.navigate('Innerevetscreen')}
+          />
+        )}
+        contentContainerStyle={{ paddingVertical: 10, paddingHorizontal: 15 }}
+        ListHeaderComponent={() => (
+          <View style={{ paddingBottom: 10 }}>
+            <Text
+              style={{
+                fontSize: 25,
+                fontWeight: '700',
+                color: '#008E6D',
+                marginTop: 20,
+              }}
+            >
+              Map
+            </Text>
 
-          {/* Search Bar Section */}
-          <View style={styles.searchContainer}>
-            <View style={styles.searchBar}>
-              <Ionicons
-                name="search"
-                size={20}
-                color="#ffffffde"
-                style={{ marginLeft: 15 }}
-              />
-              <TextInput
-                placeholder="Search events, venues..."
-                placeholderTextColor="#ffffffde"
-                style={styles.input}
-                value={searchQuery}
-                onChangeText={setSearchQuery}
-                // autoFocus={true}
-              />
-              {searchQuery.length > 0 && (
-                <TouchableOpacity onPress={() => setSearchQuery('')}>
-                  <Ionicons
-                    name="close-circle"
-                    size={20}
-                    color="#ffffffde"
-                    style={{ marginRight: 15 }}
-                  />
-                </TouchableOpacity>
-              )}
+            {/* Search Bar Section */}
+            <View style={styles.searchContainer}>
+              <View style={styles.searchBar}>
+                <Ionicons
+                  name="search"
+                  size={20}
+                  color="#ffffffde"
+                  style={{ marginLeft: 15 }}
+                />
+                <TextInput
+                  placeholder="Search events, venues..."
+                  placeholderTextColor="#ffffffde"
+                  style={styles.input}
+                  value={searchQuery}
+                  onChangeText={setSearchQuery}
+                  // autoFocus={true}
+                />
+                {searchQuery.length > 0 && (
+                  <TouchableOpacity onPress={() => setSearchQuery('')}>
+                    <Ionicons
+                      name="close-circle"
+                      size={20}
+                      color="#ffffffde"
+                      style={{ marginRight: 15 }}
+                    />
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
-          </View>
 
-          <TouchableOpacity activeOpacity={0.75}
-          onPress={openMap}
-            style={{
-              width: '100%',
-              height: 200,
-              borderRadius: 10,
-              overflow: 'hidden',
-              marginVertical: 15,
-            }}
-          >
-            <Image
-              source={require('../assets/map.png')}
+            <TouchableOpacity activeOpacity={0.75}
+              onPress={openMap}
               style={{
                 width: '100%',
-                height: '100%',
+                height: 200,
+                borderRadius: 10,
+                overflow: 'hidden',
+                marginVertical: 15,
               }}
-              resizeMode="cover"
-            />
-          </TouchableOpacity>
-
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#012D2E' }}>
-            3 Events Nearby
-          </Text>
-          <FlatList
-            data={eventsData}
-            keyExtractor={item => item.id}
-            renderItem={({ item }) => (
-              <EventList
-                item={item}
-                onPress={() => navigation.navigate('Innerevetscreen')}
+            >
+              <Image
+                source={require('../assets/map.png')}
+                style={{
+                  width: '100%',
+                  height: '100%',
+                }}
+                resizeMode="cover"
               />
-            )}
-            contentContainerStyle={{ paddingVertical: 10 }}
-          />
-        </View>
-      </ScrollView>
+            </TouchableOpacity>
+
+            <Text style={{ fontSize: 16, fontWeight: '700', color: '#012D2E' }}>
+              {eventsData.length} Events Nearby
+            </Text>
+          </View>
+        )}
+      />
     </SafeAreaView>
   );
 };
