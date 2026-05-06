@@ -3,6 +3,7 @@ import { AuthUser } from '../services/authService';
 
 const TOKEN_KEY = 'whatson_token';
 const USER_KEY = 'whatson_user';
+const ONBOARDING_KEY = 'whatson_onboarding_seen';
 
 export const saveAuth = async (token: string, user: AuthUser): Promise<void> => {
   await AsyncStorage.setItem(TOKEN_KEY, token);
@@ -21,4 +22,12 @@ export const getUser = async (): Promise<AuthUser | null> => {
 export const clearAuth = async (): Promise<void> => {
   await AsyncStorage.removeItem(TOKEN_KEY);
   await AsyncStorage.removeItem(USER_KEY);
+};
+
+export const hasSeenOnboarding = async (): Promise<boolean> => {
+  return (await AsyncStorage.getItem(ONBOARDING_KEY)) === 'true';
+};
+
+export const setOnboardingSeen = async (): Promise<void> => {
+  await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
 };

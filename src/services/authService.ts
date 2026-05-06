@@ -22,6 +22,10 @@ export interface AuthUser {
   fullName: string;
   email: string;
   role: string;
+  username?: string;
+  bio?: string;
+  website?: string;
+  avatar?: string;
 }
 
 export interface AuthResponse {

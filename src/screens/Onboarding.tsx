@@ -1,10 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
+import { setOnboardingSeen } from '../store/authStore';
 
 const Onboarding = ({ navigation }: { navigation: any }) => {
-  // Minimal placeholder — keep existing onboarding UI but ensure final button navigates to Loginscreen
-  const finish = () => {
-    navigation.replace('Loginscreen');
+  const finish = async () => {
+    await setOnboardingSeen();
+    navigation.replace('BottomTabs');
   };
 
   return (

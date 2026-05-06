@@ -27,7 +27,7 @@ export interface Event {
 
 const getAuthHeader = async () => {
   const token = await getToken();
-  return { Authorization: `Bearer ${token}` };
+  return token ? { Authorization: `Bearer ${token}` } : {};
 };
 
 // Get all events — optional filters: category, isFeatured, search, limit
@@ -36,6 +36,9 @@ export const fetchEvents = async (params?: {
   isFeatured?: boolean;
   search?: string;
   limit?: number;
+  status?: 'pending' | 'approved' | 'rejected';
+  mine?: boolean;
+  includeAll?: boolean;
 }): Promise<Event[]> => {
   const headers = await getAuthHeader();
   const response = await axios.get(`${API_BASE_URL}/events`, { headers, params });
@@ -46,6 +49,30 @@ export const fetchEvents = async (params?: {
 export const fetchEventById = async (id: string): Promise<Event> => {
   const headers = await getAuthHeader();
   const response = await axios.get(`${API_BASE_URL}/events/${id}`, { headers });
+  return response.data.event;
+};
+
+export const fetchMyEvents = async (): Promise<Event[]> => {
+  const headers = await getAuthHeader();
+  const response = await axios.get(`${API_BASE_URL}/events/mine`, { headers });
+  return response.data.events;
+};
+
+export const createEvent = async (payload: Partial<Event>): Promise<Event> => {
+  const headers = await getAuthHeader();
+  const response = await axios.post(`${API_BASE_URL}/events`, payload, { headers });
+  return response.data.event;
+};
+
+export const approveEvent = async (id: string): Promise<Event> => {
+  const headers = await getAuthHeader();
+  const response = await axios.patch(`${API_BASE_URL}/events/${id}/approve`, {}, { headers });
+  return response.data.event;
+};
+
+export const rejectEvent = async (id: string): Promise<Event> => {
+  const headers = await getAuthHeader();
+  const response = await axios.patch(`${API_BASE_URL}/events/${id}/reject`, {}, { headers });
   return response.data.event;
 };
 

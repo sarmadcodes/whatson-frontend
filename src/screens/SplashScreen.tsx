@@ -1,14 +1,21 @@
 import React, { useEffect } from 'react';
 import { View, Image, StyleSheet, StatusBar } from 'react-native';
+import { hasSeenOnboarding } from '../store/authStore';
 
 const SplashScreen = ({ navigation }: { navigation: any }) => {
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      navigation.replace('Onboarding'); 
-    }, 3000);
+    let mounted = true;
+    const timer = setTimeout(async () => {
+      const seen = await hasSeenOnboarding();
+      if (!mounted) return;
+      navigation.replace(seen ? 'BottomTabs' : 'Onboarding');
+    }, 1800);
 
-    return () => clearTimeout(timer);
+    return () => {
+      mounted = false;
+      clearTimeout(timer);
+    };
   }, []);
 
   return (
