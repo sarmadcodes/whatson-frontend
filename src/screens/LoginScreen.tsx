@@ -5,7 +5,8 @@ import {
   Alert, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { CloseIcon } from '../components/SvgIcons';
+import Icon from '../components/Icon';
 import { loginUser } from '../services/authService';
 import { saveAuth } from '../store/authStore';
 
@@ -81,7 +82,7 @@ const LoginScreen = ({ navigation }: { navigation: any }) => {
               onChangeText={setPassword}
             />
             <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
-              <Ionicons name={passwordVisible ? 'eye-off-outline' : 'eye-outline'} size={20} color="#666" />
+              <Icon name={passwordVisible ? 'eye-off-outline' : 'eye-outline'} size={20} color="#666" />
             </TouchableOpacity>
           </View>
 

@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createStackNavigator } from '@react-navigation/stack';
+import notifee from '@notifee/react-native';
 
 import SplashScreen from './src/screens/SplashScreen';
 import Onboarding from './src/screens/Onboarding';
@@ -22,6 +23,13 @@ import ManageEvents from './src/screens/ManageEvents';
 const Stack = createStackNavigator();
 
 const App = () => {
+  useEffect(() => {
+    async function requestPermissions() {
+      await notifee.requestPermission();
+    }
+    requestPermissions();
+  }, []);
+
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Splashscreen" screenOptions={{ headerShown: false }}>

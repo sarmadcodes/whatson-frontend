@@ -96,6 +96,8 @@ android {
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            // Inject MAPS_API_KEY from gradle.properties if set, otherwise empty
+            resValue "string", "MAPS_API_KEY", (project.hasProperty('MAPS_API_KEY') ? project.MAPS_API_KEY : "")
         }
         release {
             // Caution! In production, you need to generate your own keystore file.
@@ -103,6 +105,7 @@ android {
             signingConfig signingConfigs.debug
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
+            resValue "string", "MAPS_API_KEY", (project.hasProperty('MAPS_API_KEY') ? project.MAPS_API_KEY : "")
         }
     }
 }

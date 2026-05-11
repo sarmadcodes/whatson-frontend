@@ -1,4 +1,3 @@
-import Ionicons from '@react-native-vector-icons/ionicons';
 import React, { useEffect, useRef } from 'react';
 import {
   View,
@@ -8,13 +7,14 @@ import {
   Animated,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { HomeIcon, MapIcon, PlusIcon, SearchIcon, UserIcon } from './SvgIcons';
 
-const icons: Record<string, string> = {
-  Discover: 'home-outline',
-  Maps: 'map-outline',
-  Browse: 'add-outline',
-  Search: 'search-outline',
-  Profile: 'person',
+const iconMap: Record<string, React.FC<{ size: number; color: string }>> = {
+  Discover: HomeIcon,
+  Maps: MapIcon,
+  Browse: PlusIcon,
+  Search: SearchIcon,
+  Profile: UserIcon,
 };
 
 const CustomBottomBar = ({ state, navigation }: { state: any; navigation: any }) => {
@@ -69,11 +69,10 @@ const CustomBottomBar = ({ state, navigation }: { state: any; navigation: any })
                   },
                 ]}
               >
-                <Ionicons
-                  name={icons[route.name]}
-                  size={22}
-                  color={isFocused ? '#012D2E' : '#ffffffde'}
-                />
+                {React.createElement(iconMap[route.name], {
+                  size: 22,
+                  color: isFocused ? '#012D2E' : '#ffffffde',
+                })}
               </Animated.View>
 
               <Text style={[styles.label, isFocused && styles.activeLabel]}>

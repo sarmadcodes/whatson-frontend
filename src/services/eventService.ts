@@ -18,6 +18,7 @@ export interface Event {
   galleryImages: string[];
   openingHours: { day: string; hours: string }[];
   isFeatured: boolean;
+  status?: 'pending' | 'approved' | 'rejected';
   tags: string[];
   latitude: number | null;
   longitude: number | null;
@@ -81,6 +82,7 @@ export const fetchNearbyEvents = async (
   userLat?: number,
   userLng?: number,
   radiusKm: number = 50,
+  city?: string,
 ): Promise<Event[]> => {
   const headers = await getAuthHeader();
   const params: Record<string, any> = {};
@@ -88,6 +90,9 @@ export const fetchNearbyEvents = async (
     params.lat = userLat;
     params.lng = userLng;
     params.radiusKm = radiusKm;
+  }
+  if (city) {
+    params.city = city;
   }
   const response = await axios.get(`${API_BASE_URL}/events/nearby`, { headers, params });
   return response.data.events;

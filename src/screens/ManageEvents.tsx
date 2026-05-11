@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   Image,
+  Platform,
   StatusBar,
   StyleSheet,
   Text,
@@ -11,12 +13,15 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { GooglePlacesAutocomplete } from 'react-native-google-places-autocomplete';
+import Icon from '../components/Icon';
 import { launchImageLibrary } from 'react-native-image-picker';
-import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
+import { GOOGLE_MAPS_API_KEY } from '../config/maps';
 import { getToken } from '../store/authStore';
 import { createEvent, fetchMyEvents, Event } from '../services/eventService';
+
+const { width } = Dimensions.get('window');
 
 const CATEGORIES = ['Live Music', 'DJ Nightlife', 'Events', 'Food & Drink', 'Clubs', 'Comedy'];
 
@@ -32,8 +37,8 @@ const emptyForm = {
   price: '',
   isFree: false,
   imageUrl: '',
-  latitude: '',
-  longitude: '',
+  latitude: null as number | null,
+  longitude: null as number | null,
 };
 
 const ManageEvents = ({ navigation }: { navigation: any }) => {
@@ -48,18 +53,16 @@ const ManageEvents = ({ navigation }: { navigation: any }) => {
       setLoading(true);
       const data = await fetchMyEvents();
       setEvents(data);
-    } catch (err) {
+    } catch {
       setError('Could not load your events. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    loadEvents();
-  }, []);
+  useEffect(() => { loadEvents(); }, []);
 
-  const handleChange = (name: string, value: string | boolean) => {
+  const handleChange = (name: string, value: string | boolean | number | null) => {
     setForm(prev => ({ ...prev, [name]: value }));
   };
 
@@ -69,16 +72,13 @@ const ManageEvents = ({ navigation }: { navigation: any }) => {
     const filename = uri.split('/').pop() || `event-${Date.now()}.jpg`;
     const type = filename.match(/\.(\w+)$/)?.[1] ? `image/${filename.split('.').pop()}` : 'image/jpeg';
     body.append('file', { uri, name: filename, type } as any);
-
     const response = await fetch(`${API_BASE_URL}/uploads`, {
       method: 'POST',
       headers: token ? { Authorization: `Bearer ${token}` } : undefined,
       body,
     });
     const data = await response.json();
-    if (!response.ok || !data?.url) {
-      throw new Error(data?.message || 'Upload failed');
-    }
+    if (!response.ok || !data?.url) throw new Error(data?.message || 'Upload failed');
     return data.url as string;
   };
 
@@ -91,7 +91,7 @@ const ManageEvents = ({ navigation }: { navigation: any }) => {
         if (!uri) return;
         const url = await uploadImage(uri);
         setForm(prev => ({ ...prev, imageUrl: url }));
-      } catch (err) {
+      } catch {
         setError('Image upload failed.');
       } finally {
         setSubmitting(false);
@@ -105,14 +105,13 @@ const ManageEvents = ({ navigation }: { navigation: any }) => {
       setError('Please fill all required fields and upload an image.');
       return;
     }
-
     try {
       setSubmitting(true);
       await createEvent({
         ...form,
         price: form.isFree ? '' : form.price,
-        latitude: form.latitude ? Number(form.latitude) : null,
-        longitude: form.longitude ? Number(form.longitude) : null,
+        latitude: form.latitude ?? null,
+        longitude: form.longitude ?? null,
         galleryImages: [],
         openingHours: [],
       } as Partial<Event>);
@@ -127,107 +126,156 @@ const ManageEvents = ({ navigation }: { navigation: any }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <StatusBar barStyle="light-content" backgroundColor="#042929" />
       <FlatList
         data={events}
         keyExtractor={item => item._id}
-        contentContainerStyle={{ paddingBottom: 40 }}
+        contentContainerStyle={styles.listContent}
         ListHeaderComponent={
-          <View style={{ paddingBottom: 20 }}>
+          <View style={styles.listHeaderWrap}>
+            {/* Header */}
             <View style={styles.headerRow}>
-              <TouchableOpacity onPress={() => navigation.goBack()}>
+              <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
                 <Text style={styles.backText}>Back</Text>
               </TouchableOpacity>
               <Text style={styles.headerTitle}>Manage Your Events</Text>
               <View style={{ width: 40 }} />
             </View>
 
-            <Text style={styles.subTitle}>Submit an event and we’ll send it for admin approval.</Text>
+            <Text style={styles.subTitle}>Submit an event and we'll send it for admin approval.</Text>
 
             <View style={styles.formCard}>
               <Text style={styles.sectionTitle}>New Event</Text>
               {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
               <Text style={styles.label}>Event Title *</Text>
-              <TextInput style={styles.input} value={form.title} onChangeText={t => handleChange('title', t)} placeholder="Jazz Night at The Blue Room" />
+              <TextInput style={styles.input} value={form.title} onChangeText={t => handleChange('title', t)} placeholder="Jazz Night at The Blue Room" placeholderTextColor="#aaa" />
 
               <Text style={styles.label}>Description *</Text>
-              <TextInput style={[styles.input, styles.textArea]} multiline value={form.description} onChangeText={t => handleChange('description', t)} placeholder="Tell people what makes this event special" />
+              <TextInput style={[styles.input, styles.textArea]} multiline value={form.description} onChangeText={t => handleChange('description', t)} placeholder="Tell people what makes this event special" placeholderTextColor="#aaa" />
 
               <Text style={styles.label}>Venue *</Text>
-              <TextInput style={styles.input} value={form.venue} onChangeText={t => handleChange('venue', t)} placeholder="Venue name" />
+              <TextInput style={styles.input} value={form.venue} onChangeText={t => handleChange('venue', t)} placeholder="Venue name" placeholderTextColor="#aaa" />
 
-              <Text style={styles.label}>Address *</Text>
-              <TextInput style={styles.input} value={form.address} onChangeText={t => handleChange('address', t)} placeholder="Street address" />
+              <Text style={styles.label}>Venue Location *</Text>
+              <GooglePlacesAutocomplete
+                placeholder="Search venue address..."
+                fetchDetails
+                onPress={(data, details) => {
+                  if (!details) return;
+                  const lat = details.geometry?.location?.lat;
+                  const lng = details.geometry?.location?.lng;
+                  const components = details.address_components || [];
+                  const cityComp = components.find((c: any) =>
+                    c.types.includes('postal_town') ||
+                    c.types.includes('locality')
+                  );
+                  handleChange('address', details.formatted_address || data.description);
+                  handleChange('city', cityComp?.long_name || form.city);
+                  handleChange('latitude', lat ?? null);
+                  handleChange('longitude', lng ?? null);
+                }}
+                query={{ key: GOOGLE_MAPS_API_KEY, language: 'en' }}
+                enablePoweredByContainer={false}
+                keyboardShouldPersistTaps="handled"
+                styles={{
+                  textInput: { ...styles.input, paddingLeft: 12 },
+                  listView: { borderWidth: 1, borderColor: '#dde3e8', borderRadius: 12, marginTop: 4 },
+                  row: { paddingVertical: 12, paddingHorizontal: 12, backgroundColor: '#042929' },
+                  description: { color: '#FFFFFF', fontSize: 13 },
+                }}
+              />
+              {form.latitude && form.longitude ? (
+                <Text style={{ color: '#008E6D', fontSize: 11, marginBottom: 8, fontWeight: '700' }}>
+                  📍 Pinned: {Number(form.latitude).toFixed(5)}, {Number(form.longitude).toFixed(5)}
+                </Text>
+              ) : null}
 
-              <View style={styles.row2}>
-                <View style={{ flex: 1 }}>
+              {/* City + Category: stack on narrow screens */}
+              <View style={styles.twoCol}>
+                <View style={styles.colHalf}>
                   <Text style={styles.label}>City *</Text>
-                  <TextInput style={styles.input} value={form.city} onChangeText={t => handleChange('city', t)} placeholder="City" />
+                  <TextInput style={styles.input} value={form.city} onChangeText={t => handleChange('city', t)} placeholder="City" placeholderTextColor="#aaa" />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={styles.colHalf}>
                   <Text style={styles.label}>Category *</Text>
-                  <View style={styles.pickerWrap}>
-                    <TextInput
-                      style={styles.input}
-                      value={form.category}
-                      onChangeText={t => handleChange('category', t)}
-                      placeholder="Category"
-                    />
+                  <View style={styles.categorySelector}>
+                    {CATEGORIES.map(category => {
+                      const selected = form.category === category;
+                      return (
+                        <TouchableOpacity
+                          key={category}
+                          style={[styles.categoryChip, selected && styles.categoryChipActive]}
+                          onPress={() => handleChange('category', category)}
+                        >
+                          <Text style={[styles.categoryChipText, selected && styles.categoryChipTextActive]} numberOfLines={1}>
+                            {category}
+                          </Text>
+                        </TouchableOpacity>
+                      );
+                    })}
                   </View>
                 </View>
               </View>
 
-              <View style={styles.row2}>
-                <View style={{ flex: 1 }}>
+              {/* Date + Time */}
+              <View style={styles.twoCol}>
+                <View style={styles.colHalf}>
                   <Text style={styles.label}>Date *</Text>
-                  <TextInput style={styles.input} value={form.date} onChangeText={t => handleChange('date', t)} placeholder="Fri, 16th May, 2026" />
+                  <TextInput style={styles.input} value={form.date} onChangeText={t => handleChange('date', t)} placeholder="Fri, 16th May, 2026" placeholderTextColor="#aaa" />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={styles.colHalf}>
                   <Text style={styles.label}>Time *</Text>
-                  <TextInput style={styles.input} value={form.time} onChangeText={t => handleChange('time', t)} placeholder="9:00 PM" />
+                  <TextInput style={styles.input} value={form.time} onChangeText={t => handleChange('time', t)} placeholder="9:00 PM" placeholderTextColor="#aaa" />
                 </View>
               </View>
 
-              <View style={styles.row2}>
+              {/* Price + Free toggle */}
+              <View style={styles.priceRow}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.label}>Price</Text>
-                  <TextInput style={styles.input} value={form.price} onChangeText={t => handleChange('price', t)} placeholder="15" editable={!form.isFree} />
+                  <TextInput
+                    style={styles.input}
+                    value={form.price}
+                    onChangeText={t => handleChange('price', t)}
+                    placeholder="15"
+                    placeholderTextColor="#aaa"
+                    editable={!form.isFree}
+                    keyboardType="numeric"
+                  />
                 </View>
-                <TouchableOpacity style={[styles.freeChip, form.isFree && styles.freeChipActive]} onPress={() => handleChange('isFree', !form.isFree)}>
-                  <Text style={[styles.freeChipText, form.isFree && styles.freeChipTextActive]}>{form.isFree ? 'Free entry on' : 'Free entry off'}</Text>
+                <TouchableOpacity
+                  style={[styles.freeChip, form.isFree && styles.freeChipActive]}
+                  onPress={() => handleChange('isFree', !form.isFree)}
+                >
+                  <Text style={[styles.freeChipText, form.isFree && styles.freeChipTextActive]}>
+                    {form.isFree ? 'Free ✓' : 'Free?'}
+                  </Text>
                 </TouchableOpacity>
               </View>
 
+              {/* Image upload */}
               <Text style={styles.label}>Main Image *</Text>
               <TouchableOpacity style={styles.uploadBtn} onPress={pickImage}>
                 {form.imageUrl ? (
                   <Image source={{ uri: form.imageUrl }} style={styles.previewImage} />
                 ) : (
                   <View style={styles.uploadPlaceholder}>
-                    <Ionicons name="cloud-upload-outline" size={24} color="#008E6D" />
-                    <Text style={styles.uploadText}>Select from gallery and upload to Cloudinary</Text>
+                    <Icon name="cloud-upload-outline" size={28} color="#008E6D" />
+                    <Text style={styles.uploadText}>Tap to select & upload image</Text>
                   </View>
                 )}
               </TouchableOpacity>
 
-              <View style={styles.row2}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>Latitude</Text>
-                  <TextInput style={styles.input} value={form.latitude} onChangeText={t => handleChange('latitude', t)} placeholder="54.5973" />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.label}>Longitude</Text>
-                  <TextInput style={styles.input} value={form.longitude} onChangeText={t => handleChange('longitude', t)} placeholder="-5.9301" />
-                </View>
-              </View>
-
               <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit} disabled={submitting}>
-                {submitting ? <ActivityIndicator color="#fff" /> : <Text style={styles.submitText}>Submit for Approval</Text>}
+                {submitting
+                  ? <ActivityIndicator color="#fff" />
+                  : <Text style={styles.submitText}>Submit for Approval</Text>
+                }
               </TouchableOpacity>
             </View>
 
-            <View style={styles.listHeader}>
+            <View style={styles.listSubHeader}>
               <Text style={styles.sectionTitle}>Your Submitted Events</Text>
               <Text style={styles.muted}>{events.length} total</Text>
             </View>
@@ -238,7 +286,7 @@ const ManageEvents = ({ navigation }: { navigation: any }) => {
             <ActivityIndicator size="large" color="#008E6D" style={{ marginTop: 30 }} />
           ) : (
             <View style={styles.emptyBox}>
-              <Ionicons name="calendar-outline" size={44} color="#ccc" />
+              <Icon name="calendar-outline" size={44} color="#ccc" />
               <Text style={styles.emptyText}>No submitted events yet.</Text>
             </View>
           )
@@ -246,10 +294,15 @@ const ManageEvents = ({ navigation }: { navigation: any }) => {
         renderItem={({ item }) => (
           <View style={styles.eventCard}>
             <Image source={{ uri: item.imageUrl }} style={styles.eventImage} />
-            <View style={{ flex: 1 }}>
+            <View style={styles.eventInfo}>
               <Text style={styles.eventTitle} numberOfLines={1}>{item.title}</Text>
-              <Text style={styles.eventMeta}>{item.venue} • {item.city}</Text>
-              <Text style={[styles.statusBadge, item.status === 'approved' ? styles.approved : item.status === 'pending' ? styles.pending : styles.rejected]}>
+              <Text style={styles.eventMeta} numberOfLines={1}>{item.venue} • {item.city}</Text>
+              <Text style={[
+                styles.statusBadge,
+                item.status === 'approved' ? styles.approved
+                  : item.status === 'pending' ? styles.pending
+                  : styles.rejected,
+              ]}>
                 {item.status || 'approved'}
               </Text>
             </View>
@@ -263,36 +316,103 @@ const ManageEvents = ({ navigation }: { navigation: any }) => {
 export default ManageEvents;
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff', paddingHorizontal: 16 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 12 },
-  backText: { fontSize: 16, fontWeight: '700', color: '#111' },
-  headerTitle: { fontSize: 18, fontWeight: '800', color: '#012D2E' },
-  subTitle: { color: '#666', marginBottom: 12 },
-  formCard: { backgroundColor: '#f8fafb', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#e8ecf0' },
-  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#012D2E', marginBottom: 10 },
-  label: { fontSize: 12, fontWeight: '700', color: '#4b5563', marginTop: 10, marginBottom: 6 },
-  input: { backgroundColor: '#fff', borderWidth: 1, borderColor: '#dde3e8', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 11, fontSize: 14, color: '#111' },
-  textArea: { minHeight: 90, textAlignVertical: 'top' },
-  row2: { flexDirection: 'row', gap: 10 },
-  pickerWrap: { flex: 1 },
-  freeChip: { alignSelf: 'flex-end', marginTop: 24, paddingHorizontal: 12, paddingVertical: 10, borderRadius: 999, backgroundColor: '#eef2f4' },
+  container: { flex: 1, backgroundColor: '#042929' },
+  listContent: { paddingHorizontal: 16, paddingBottom: 40 },
+  listHeaderWrap: { paddingBottom: 20 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 12,
+  },
+  backText: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  headerTitle: { fontSize: 17, fontWeight: '800', color: '#fff', textAlign: 'center', flex: 1 },
+  subTitle: { color: '#bbb', marginBottom: 12, fontSize: 13 },
+  formCard: {
+    backgroundColor: '#042929',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#008E6D',
+  },
+  sectionTitle: { fontSize: 17, fontWeight: '800', color: '#fff', marginBottom: 10 },
+  label: { fontSize: 12, fontWeight: '700', color: '#FFFFFF', marginTop: 10, marginBottom: 6 },
+  input: {
+    backgroundColor: '#042929',
+    borderWidth: 1,
+    borderColor: '#008E6D',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: Platform.OS === 'ios' ? 12 : 10,
+    fontSize: 14,
+    color: '#FFFFFF',
+  },
+  textArea: { minHeight: 80, textAlignVertical: 'top' },
+  // Two-column layout using percentage widths — works on all screen sizes
+  twoCol: { flexDirection: 'row', gap: 10, marginTop: 2 },
+  colHalf: { flex: 1 },
+  categorySelector: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 2 },
+  categoryChip: {
+    borderWidth: 1, borderColor: '#dde3e8',
+    borderRadius: 999, paddingHorizontal: 8, paddingVertical: 7,
+    backgroundColor: '#fff',
+  },
+  categoryChipActive: { backgroundColor: '#008E6D', borderColor: '#008E6D' },
+  categoryChipText: { color: '#334155', fontWeight: '700', fontSize: 10 },
+  categoryChipTextActive: { color: '#fff' },
+  priceRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10, marginTop: 2 },
+  freeChip: {
+    paddingHorizontal: 12, paddingVertical: 10,
+    borderRadius: 999, backgroundColor: '#eef2f4',
+    marginBottom: 2,
+  },
   freeChipActive: { backgroundColor: '#008E6D' },
   freeChipText: { color: '#334155', fontWeight: '700', fontSize: 12 },
   freeChipTextActive: { color: '#fff' },
-  uploadBtn: { marginTop: 4, borderWidth: 1, borderColor: '#dde3e8', borderStyle: 'dashed', borderRadius: 14, overflow: 'hidden', backgroundColor: '#fff' },
-  uploadPlaceholder: { minHeight: 160, alignItems: 'center', justifyContent: 'center', gap: 8 },
+  uploadBtn: {
+    marginTop: 4,
+    borderWidth: 1, borderColor: '#dde3e8',
+    borderStyle: 'dashed', borderRadius: 14,
+    overflow: 'hidden', backgroundColor: '#fff',
+  },
+  uploadPlaceholder: { minHeight: 140, alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 16 },
   uploadText: { fontSize: 13, fontWeight: '700', color: '#008E6D', textAlign: 'center', paddingHorizontal: 10 },
-  previewImage: { width: '100%', height: 180, resizeMode: 'cover' },
-  submitBtn: { marginTop: 14, backgroundColor: '#008E6D', borderRadius: 999, alignItems: 'center', justifyContent: 'center', paddingVertical: 14 },
+  previewImage: { width: '100%', height: 170, resizeMode: 'cover' },
+  submitBtn: {
+    marginTop: 16,
+    backgroundColor: '#74C33C',
+    borderRadius: 999,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 14,
+  },
   submitText: { color: '#fff', fontWeight: '800', fontSize: 15 },
-  errorText: { color: '#c62828', fontWeight: '700', marginBottom: 8 },
-  listHeader: { flexDirection: 'row', alignItems: 'baseline', justifyContent: 'space-between', marginTop: 18, marginBottom: 10 },
+  errorText: { color: '#c62828', fontWeight: '700', marginBottom: 8, fontSize: 13 },
+  listSubHeader: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    marginTop: 18, marginBottom: 10,
+  },
   muted: { color: '#94a3b8', fontSize: 12 },
-  eventCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#fff', borderWidth: 1, borderColor: '#eef2f4', borderRadius: 16, padding: 12, marginBottom: 12 },
-  eventImage: { width: 64, height: 64, borderRadius: 12, backgroundColor: '#f1f5f9' },
+  eventCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#fff',
+    borderWidth: 1, borderColor: '#eef2f4',
+    borderRadius: 16, padding: 12, marginBottom: 12,
+  },
+  eventImage: { width: 64, height: 64, borderRadius: 12, backgroundColor: '#f1f5f9', flexShrink: 0 },
+  eventInfo: { flex: 1, minWidth: 0 },
   eventTitle: { fontSize: 15, fontWeight: '800', color: '#0f172a' },
   eventMeta: { fontSize: 12, color: '#64748b', marginTop: 3 },
-  statusBadge: { alignSelf: 'flex-start', marginTop: 8, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 999, overflow: 'hidden', fontSize: 11, fontWeight: '800', textTransform: 'uppercase' },
+  statusBadge: {
+    alignSelf: 'flex-start', marginTop: 8,
+    paddingHorizontal: 10, paddingVertical: 5,
+    borderRadius: 999, overflow: 'hidden',
+    fontSize: 11, fontWeight: '800', textTransform: 'uppercase',
+  },
   approved: { backgroundColor: 'rgba(16,185,129,0.12)', color: '#047857' },
   pending: { backgroundColor: 'rgba(245,158,11,0.12)', color: '#b45309' },
   rejected: { backgroundColor: 'rgba(239,68,68,0.12)', color: '#b91c1c' },

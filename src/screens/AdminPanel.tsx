@@ -1,4 +1,5 @@
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { MenuIcon, SettingsIcon } from '../components/SvgIcons';
+import Icon from '../components/Icon';
 import React, { useState } from 'react';
 import {
   StyleSheet,
@@ -14,13 +15,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 // Substitute with real icons in your project (e.g., Ionicons, MaterialIcons)
 // import Ionicons from '@react-native-vector-icons/ionicons';
 // import MaterialIcons from '@react-native-vector-icons/material-icons';
-
-// Placeholder Component for Icons (Substitute with real ones)
-const DummyIcon = ({ size, color, name }) => (
-  <View style={{ width: size, height: size, backgroundColor: color, borderRadius: size / 2, justifyContent: 'center', alignItems: 'center' }}>
-    <Text style={{ fontSize: size * 0.5, color: THEME.TEXT_LIGHT }}>?</Text>
-  </View>
-);
 
 // Theme Definitions from Design
 const THEME = {
@@ -39,7 +33,14 @@ const THEME = {
   BORDER: '#eee',
 };
 
-const AdminPanelScreen = ({ navigation }) => {
+// Placeholder Component for Icons (Substitute with real ones)
+const DummyIcon = ({ size, color, name }: { size: number, color: string, name: string }) => (
+  <View style={{ width: size, height: size, backgroundColor: color, borderRadius: size / 2, justifyContent: 'center', alignItems: 'center' }}>
+    <Text style={{ fontSize: size * 0.5, color: THEME.TEXT_LIGHT }}>?</Text>
+  </View>
+);
+
+const AdminPanelScreen = ({ navigation }: { navigation: any }) => {
   const [activeSegment, setActiveSegment] = useState('Overview');
 
   // Stats Data from Design
@@ -103,21 +104,21 @@ const AdminPanelScreen = ({ navigation }) => {
   const Header = () => (
     <View style={styles.header}>
       <TouchableOpacity onPress={() => navigation?.goBack()} style={styles.backBtn}>
-        <Ionicons name="chevron-back" size={24} color={THEME.TEXT_DARK} />
+        <Icon name="chevron-back" size={24} color={THEME.TEXT_DARK} />
         <Text style={styles.backBtnText}>Back</Text>
       </TouchableOpacity>
       <TouchableOpacity onPress={() => navigation.navigate('NotificationSettings')}
       style={styles.settingsCircle}>
-        <Ionicons name="settings" size={20} color="white" />
+        <Icon name="settings" size={20} color="white" />
       </TouchableOpacity>
     </View>
   );
 
   // Stats Card Component
-  const StatCard = ({ item }) => (
+  const StatCard = ({ item }: { item: any }) => (
     <View style={styles.statCard}>
       <View style={styles.statIconHeader}>
-        <Ionicons name={item.icon} size={20} color={THEME.STATUS_GREEN} />
+        <Icon name={item.icon} size={20} color={THEME.STATUS_GREEN} />
       </View>
       <Text style={styles.statValue}>{item.value}</Text>
       <Text style={styles.statMeta}>{`${item.meta} ${item.label}`}</Text>
@@ -125,7 +126,7 @@ const AdminPanelScreen = ({ navigation }) => {
   );
 
   // Venue Item Component
-  const VenueItem = ({ item }) => (
+  const VenueItem = ({ item }: { item: any }) => (
     <View style={styles.venueItem}>
       <View style={styles.venueItemContent}>
         <Image source={{ uri: item.image }} style={styles.venueImage} resizeMode='cover' />
@@ -173,7 +174,7 @@ const AdminPanelScreen = ({ navigation }) => {
         {/* Growth Card */}
         <View style={styles.growthCard}>
           <View style={styles.growthHeader}>
-            <Ionicons name="trending-up" size={24} color={THEME.STATUS_GREEN} />
+            <Icon name="trending-up" size={24} color={THEME.STATUS_GREEN} />
             <Text style={styles.growthTitle}>Platform Growth</Text>
           </View>
           <View style={styles.chartContainer}>

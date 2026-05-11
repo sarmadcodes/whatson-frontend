@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   StatusBar,
   StyleSheet,
@@ -10,9 +11,11 @@ import {
   View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import Icon from '../components/Icon';
 import EventList from '../components/EventList';
 import { fetchEvents, Event } from '../services/eventService';
+
+const { width } = Dimensions.get('window');
 
 const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) => {
   const [searchQuery, setSearchQuery] = useState(route?.params?.query || '');
@@ -64,23 +67,24 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" backgroundColor="#fff" />
 
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
+        <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <TouchableOpacity
           onPress={() => navigation.navigate('Notifications')}
-          style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}
+          style={styles.notifBtn}
         >
-          <Ionicons name="notifications" size={20} color="white" />
+          <Icon name="notifications" size={20} color="white" />
         </TouchableOpacity>
       </View>
 
-      <View style={{ paddingHorizontal: 15 }}>
-        <Text style={{ fontSize: 25, fontWeight: '700', color: '#008E6D', marginTop: 20, marginBottom: 10 }}>Search</Text>
+      <View style={styles.searchSection}>
+        <Text style={styles.pageTitle}>Search</Text>
 
         <View style={styles.searchBar}>
-          <Ionicons name="search" size={20} color="#ffffffde" style={{ marginLeft: 15 }} />
+          <Icon name="search" size={20} color="#ffffffde" />
           <TextInput
             placeholder="Search events, venues..."
             placeholderTextColor="#ffffffde"
@@ -88,17 +92,21 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
             value={searchQuery}
             onChangeText={setSearchQuery}
             returnKeyType="search"
+            onSubmitEditing={handleSearchNow}
             autoFocus
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => { setSearchQuery(''); setResults([]); setSearched(false); }}>
-              <Ionicons name="close-circle" size={20} color="#ffffffde" style={{ marginRight: 15 }} />
+            <TouchableOpacity
+              onPress={() => { setSearchQuery(''); setResults([]); setSearched(false); }}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Icon name="close-circle" size={20} color="#ffffffde" />
             </TouchableOpacity>
           )}
         </View>
 
-        <TouchableOpacity onPress={handleSearchNow} style={{ marginTop: 10, alignSelf: 'flex-end' }}>
-          <Text style={{ color: '#008E6D', fontWeight: '700' }}>Search now</Text>
+        <TouchableOpacity onPress={handleSearchNow} style={styles.searchNowBtn}>
+          <Text style={styles.searchNowText}>Search now</Text>
         </TouchableOpacity>
       </View>
 
@@ -109,7 +117,9 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
           <>
             {searched && (
               <View style={styles.resultsHeader}>
-                <Text style={styles.resultsTitle}>{results.length > 0 ? 'Results' : 'No results found'}</Text>
+                <Text style={styles.resultsTitle}>
+                  {results.length > 0 ? 'Results' : 'No results found'}
+                </Text>
                 <Text style={styles.resultsCount}>{results.length} found</Text>
               </View>
             )}
@@ -124,7 +134,8 @@ const SearchScreen = ({ navigation, route }: { navigation: any; route: any }) =>
               ListEmptyComponent={() =>
                 searched ? (
                   <View style={styles.emptyState}>
-                    <Ionicons name="search-outline" size={80} color="#ccc" />
+                    {/* Responsive icon size */}
+                    <Icon name="search-outline" size={Math.min(80, width * 0.2)} color="#ccc" />
                     <Text style={styles.emptyText}>No events found for "{searchQuery}"</Text>
                   </View>
                 ) : null
@@ -141,14 +152,38 @@ export default SearchScreen;
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1, backgroundColor: '#fff' },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 15, paddingVertical: 10 },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 15,
+    paddingVertical: 10,
+  },
   backText: { fontSize: 16, fontWeight: '700', color: '#111' },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#012D2E', borderRadius: 50, height: 45, marginBottom: 10 },
-  input: { flex: 1, color: '#fff', fontSize: 16, paddingHorizontal: 10 },
+  notifBtn: { backgroundColor: '#008E6D', borderRadius: 50, padding: 8 },
+  searchSection: { paddingHorizontal: 15, paddingBottom: 4 },
+  pageTitle: { fontSize: 25, fontWeight: '700', color: '#008E6D', marginTop: 14, marginBottom: 12 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#012D2E',
+    borderRadius: 50,
+    height: 45,
+    paddingHorizontal: 14,
+    gap: 8,
+  },
+  input: { flex: 1, color: '#fff', fontSize: 16 },
+  searchNowBtn: { marginTop: 10, alignSelf: 'flex-end' },
+  searchNowText: { color: '#008E6D', fontWeight: '700' },
   resultsContainer: { flex: 1, paddingHorizontal: 15, marginTop: 10 },
-  resultsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 15 },
+  resultsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
   resultsTitle: { fontSize: 18, fontWeight: '700', color: '#012D2E' },
   resultsCount: { fontSize: 12, color: '#555' },
-  emptyState: { alignItems: 'center', marginTop: 50 },
-  emptyText: { color: '#888', marginTop: 10, fontSize: 14, textAlign: 'center' },
+  emptyState: { alignItems: 'center', marginTop: 50, paddingHorizontal: 20 },
+  emptyText: { color: '#888', marginTop: 12, fontSize: 14, textAlign: 'center' },
 });

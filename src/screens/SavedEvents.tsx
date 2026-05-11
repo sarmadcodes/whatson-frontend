@@ -4,10 +4,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useFocusEffect } from '@react-navigation/native';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import Icon from '../components/Icon';
 import EventList from '../components/EventList';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getSavedEvents } from '../store/savedEventsStore';
-import { Event } from '../services/eventService';
+import { Event, fetchEventById } from '../services/eventService';
 
 const SavedEventsScreen = ({ navigation }: { navigation: any }) => {
   const [savedEvents, setSavedEvents] = useState<Event[]>([]);
@@ -16,8 +17,19 @@ const SavedEventsScreen = ({ navigation }: { navigation: any }) => {
   useFocusEffect(
     useCallback(() => {
       const load = async () => {
-        const events = await getSavedEvents();
-        setSavedEvents(events);
+        setLoading(true);
+        const saved = await AsyncStorage.getItem('saved_events');
+        const savedIds: string[] = saved ? JSON.parse(saved) : [];
+        if (savedIds.length === 0) { 
+          setSavedEvents([]); 
+          setLoading(false);
+          return; 
+        }
+        // Fetch each event by ID
+        const results = await Promise.all(
+          savedIds.map(id => fetchEventById(id).catch(() => null))
+        );
+        setSavedEvents(results.filter(Boolean) as Event[]);
         setLoading(false);
       };
       load();
@@ -32,7 +44,7 @@ const SavedEventsScreen = ({ navigation }: { navigation: any }) => {
           <Text style={styles.backButtonText}>Back</Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('Notifications')} style={styles.notifCircle}>
-          <Ionicons name="notifications" size={20} color="white" />
+          <Icon name="notifications" size={20} color="white" />
         </TouchableOpacity>
       </View>
       <View style={styles.content}>
@@ -51,7 +63,7 @@ const SavedEventsScreen = ({ navigation }: { navigation: any }) => {
             showsVerticalScrollIndicator={false}
             ListEmptyComponent={() => (
               <View style={styles.emptyContainer}>
-                <Ionicons name="heart-outline" size={80} color="#ddd" />
+                <Icon name="heart-outline" size={80} color="#ddd" />
                 <Text style={styles.emptyText}>No saved events yet</Text>
                 <Text style={{ color: '#aaa', fontSize: 13, marginTop: 5 }}>Tap the heart icon on any event to save it</Text>
               </View>

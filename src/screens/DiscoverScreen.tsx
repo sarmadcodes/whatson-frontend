@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   FlatList,
   RefreshControl,
   ScrollView,
@@ -10,13 +11,17 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useFocusEffect } from '@react-navigation/native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import FilterGroup from '../components/FilterGroup';
 import EventCard from '../components/EventCard';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { FilterIcon, HeartIcon, SearchIcon, BellIcon, PinIcon, StarIcon, CloseIcon } from '../components/SvgIcons';
 import EventList from '../components/EventList';
 import CategoryCard from '../components/CategoryCard';
 import { fetchEvents, fetchNearbyEvents, Event } from '../services/eventService';
+
+const { width } = Dimensions.get('window');
 
 const myFilters = [
   { id: 'All', name: 'All' },
@@ -79,6 +84,9 @@ const isThisWeekEvent = (event: Event) => {
   return diffDays >= 0 && diffDays <= 7;
 };
 
+// Responsive card height based on screen width
+const CARD_HEIGHT = width < 360 ? 130 : 150;
+
 const DiscoverScreen = ({ navigation }: { navigation: any }) => {
   const [allEvents, setAllEvents] = useState<Event[]>([]);
   const [featuredEvents, setFeaturedEvents] = useState<Event[]>([]);
@@ -88,12 +96,23 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
   const [refreshing, setRefreshing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'All' | 'Today' | 'Tonight' | 'This Week'>('All');
+  const [userCity, setUserCity] = useState('London, United Kingdom');
 
   const loadEvents = useCallback(async () => {
     try {
+      const storedCity = await AsyncStorage.getItem('user_city');
+      const storedLat = await AsyncStorage.getItem('user_lat');
+      const storedLng = await AsyncStorage.getItem('user_lng');
+
+      const lat = storedLat ? parseFloat(storedLat) : undefined;
+      const lng = storedLng ? parseFloat(storedLng) : undefined;
+      const city = lat === undefined && lng === undefined && storedCity ? storedCity : undefined;
+
+      if (storedCity) setUserCity(storedCity);
+
       const [featured, nearby, recent, all] = await Promise.all([
         fetchEvents({ isFeatured: true, limit: 10 }),
-        fetchNearbyEvents(),
+        fetchNearbyEvents(lat, lng, 50, city),
         fetchEvents({ limit: 8 }),
         fetchEvents({ limit: 100 }),
       ]);
@@ -109,87 +128,82 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
     }
   }, []);
 
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
+  useEffect(() => { loadEvents(); }, [loadEvents]);
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    loadEvents();
-  };
+  useFocusEffect(useCallback(() => { loadEvents(); }, [loadEvents]));
+
+  const onRefresh = () => { setRefreshing(true); loadEvents(); };
 
   const handleSearch = () => {
     const query = searchQuery.trim();
-    if (query.length > 0) {
-      navigation.navigate('Search', { query });
-    }
+    if (query.length > 0) navigation.navigate('Search', { query });
   };
 
   const tabFilteredEvents = useMemo(() => {
     switch (selectedFilter) {
-      case 'Today':
-        return allEvents.filter(isTodayEvent);
-      case 'Tonight':
-        return allEvents.filter(isTonightEvent);
-      case 'This Week':
-        return allEvents.filter(isThisWeekEvent);
-      default:
-        return allEvents;
+      case 'Today': return allEvents.filter(isTodayEvent);
+      case 'Tonight': return allEvents.filter(isTonightEvent);
+      case 'This Week': return allEvents.filter(isThisWeekEvent);
+      default: return allEvents;
     }
   }, [allEvents, selectedFilter]);
 
   const visibleFeatured = useMemo(
-    () => featuredEvents.filter(event => tabFilteredEvents.some(item => item._id === event._id)),
+    () => featuredEvents.filter(e => tabFilteredEvents.some(i => i._id === e._id)),
     [featuredEvents, tabFilteredEvents],
   );
-
   const visibleNearby = useMemo(
-    () => nearbyEvents.filter(event => tabFilteredEvents.some(item => item._id === event._id)),
+    () => nearbyEvents.filter(e => tabFilteredEvents.some(i => i._id === e._id)),
     [nearbyEvents, tabFilteredEvents],
   );
-
   const visibleRecent = useMemo(
-    () => recentEvents.filter(event => tabFilteredEvents.some(item => item._id === event._id)),
+    () => recentEvents.filter(e => tabFilteredEvents.some(i => i._id === e._id)),
     [recentEvents, tabFilteredEvents],
   );
 
   if (loading) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#008E6D" />
       </View>
     );
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#fff' }}>
+    <View style={styles.root}>
       <ScreenWrapper imageSource={require('../assets/homebg.png')} backgroundColor="#FFFFFF">
         <ScrollView
           showsVerticalScrollIndicator={false}
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} colors={['#008E6D']} />}
         >
-          <View style={{ paddingBottom: '40%' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Ionicons name="pin-sharp" size={20} color="red" />
-                <View>
-                  <Text style={{ fontSize: 16, fontWeight: '700', color: '#fff' }}>Location</Text>
-                  <Text style={{ fontSize: 12, fontWeight: '400', color: '#ffffffde' }}>London, United Kingdom</Text>
+          {/* Extra bottom padding so content clears the tab bar on all screen sizes */}
+          <View style={styles.content}>
+            {/* Header row */}
+            <View style={styles.headerRow}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Locationscreen')}
+                style={styles.locationBtn}
+              >
+                <PinIcon size={20} color="#FF0000" />
+                <View style={styles.locationTextWrap}>
+                  <Text style={styles.locationLabel}>Location</Text>
+                  <Text style={styles.locationCity} numberOfLines={1}>{userCity}</Text>
                 </View>
-              </View>
+              </TouchableOpacity>
               <TouchableOpacity
                 onPress={() => navigation.navigate('Notifications')}
-                style={{ backgroundColor: '#74C33C', borderRadius: 50, padding: 8 }}
+                style={styles.bellBtn}
               >
-                <Ionicons name="notifications" size={20} color="white" />
+                <BellIcon size={20} color="white" />
               </TouchableOpacity>
             </View>
 
-            <Text style={{ fontSize: 25, fontWeight: '700', color: '#012D2E', marginTop: 20 }}>Discover</Text>
+            <Text style={styles.pageTitle}>Discover</Text>
 
+            {/* Search bar */}
             <View style={styles.searchContainer}>
               <View style={styles.searchBar}>
-                <Ionicons name="search" size={20} color="#ffffffde" style={{ marginLeft: 15 }} />
+                <SearchIcon size={20} color="#ffffffde" />
                 <TextInput
                   placeholder="Search events, venues..."
                   placeholderTextColor="#ffffffde"
@@ -200,21 +214,26 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                   returnKeyType="search"
                 />
                 {searchQuery.length > 0 && (
-                  <TouchableOpacity onPress={() => setSearchQuery('')}>
-                    <Ionicons name="close-circle" size={20} color="#ffffffde" style={{ marginRight: 15 }} />
+                  <TouchableOpacity onPress={() => setSearchQuery('')} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+                    <CloseIcon size={20} color="#ffffffde" />
                   </TouchableOpacity>
                 )}
               </View>
             </View>
 
-            <FilterGroup items={myFilters} selectedId={selectedFilter} onSelect={value => setSelectedFilter(value as any)} />
+            <FilterGroup items={myFilters} selectedId={selectedFilter} onSelect={(v: any) => setSelectedFilter(v as any)} />
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#012D2E' }}>Categories</Text>
+            {/* Categories */}
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionTitle}>Categories</Text>
             </View>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 10 }}>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.categoryScroll}
+            >
               {categoryCards.map((item, index) => (
-                <View key={index} style={{ marginRight: 12 }}>
+                <View key={index} style={styles.categoryItem}>
                   <CategoryCard
                     {...item}
                     onPress={() => navigation.navigate('Categorydetails', { categoryName: item.label })}
@@ -223,18 +242,19 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
               ))}
             </ScrollView>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5, marginTop: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: '#012D2E' }}>Featured</Text>
-                <Ionicons name="star" size={15} color="orange" />
+            {/* Featured */}
+            <View style={styles.sectionRow}>
+              <View style={styles.sectionLeft}>
+                <Text style={styles.sectionTitle}>Featured</Text>
+                <StarIcon size={15} color="#FFB800" />
               </View>
               <TouchableOpacity onPress={() => navigation.navigate('EventGroup', { title: 'Featured', type: 'card', filter: 'featured' })}>
-                <Text style={{ fontSize: 12, color: '#111' }}>See more</Text>
+                <Text style={styles.seeMore}>See more</Text>
               </TouchableOpacity>
             </View>
-            <View style={{ height: 150 }}>
+            <View style={{ height: CARD_HEIGHT }}>
               {visibleFeatured.length === 0 ? (
-                <Text style={{ color: '#999', fontSize: 13, paddingVertical: 10 }}>No featured events yet</Text>
+                <Text style={styles.emptyText}>No featured events yet</Text>
               ) : (
                 <FlatList
                   horizontal
@@ -244,23 +264,24 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     <EventCard data={item} onPress={() => navigation.navigate('Innerevetscreen', { eventId: item._id })} />
                   )}
                   keyExtractor={item => item._id}
-                  contentContainerStyle={{ paddingVertical: 5 }}
+                  contentContainerStyle={styles.hListContent}
                 />
               )}
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5, marginTop: 10 }}>
-              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 5 }}>
-                <Text style={{ fontSize: 16, fontWeight: '700', color: '#012D2E' }}>Nearby Events</Text>
-                <Ionicons name="star" size={15} color="orange" />
+            {/* Nearby */}
+            <View style={styles.sectionRow}>
+              <View style={styles.sectionLeft}>
+                <Text style={styles.sectionTitle}>Nearby Events</Text>
+                <StarIcon size={15} color="#FFB800" />
               </View>
               <TouchableOpacity onPress={() => navigation.navigate('EventGroup', { title: 'Nearby Events', type: 'card', filter: 'all' })}>
-                <Text style={{ fontSize: 12, color: '#111' }}>See more</Text>
+                <Text style={styles.seeMore}>See more</Text>
               </TouchableOpacity>
             </View>
-            <View style={{ height: 150 }}>
+            <View style={{ height: CARD_HEIGHT }}>
               {visibleNearby.length === 0 ? (
-                <Text style={{ color: '#999', fontSize: 13, paddingVertical: 10 }}>No events nearby</Text>
+                <Text style={styles.emptyText}>No events nearby</Text>
               ) : (
                 <FlatList
                   horizontal
@@ -270,19 +291,20 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
                     <EventCard data={item} onPress={() => navigation.navigate('Innerevetscreen', { eventId: item._id })} />
                   )}
                   keyExtractor={item => item._id}
-                  contentContainerStyle={{ paddingVertical: 5 }}
+                  contentContainerStyle={styles.hListContent}
                 />
               )}
             </View>
 
-            <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 5, marginTop: 10 }}>
-              <Text style={{ fontSize: 16, fontWeight: '700', color: '#012D2E' }}>Happening Now</Text>
+            {/* Happening Now */}
+            <View style={styles.sectionRow}>
+              <Text style={styles.sectionTitle}>Happening Now</Text>
               <TouchableOpacity onPress={() => navigation.navigate('EventGroup', { title: 'Happening Now', type: 'list', filter: 'all' })}>
-                <Text style={{ fontSize: 12, color: '#111' }}>See more</Text>
+                <Text style={styles.seeMore}>See more</Text>
               </TouchableOpacity>
             </View>
             {visibleRecent.length === 0 ? (
-              <Text style={{ color: '#999', fontSize: 13, paddingVertical: 10 }}>No events right now</Text>
+              <Text style={styles.emptyText}>No events right now</Text>
             ) : (
               <FlatList
                 data={visibleRecent}
@@ -304,7 +326,44 @@ const DiscoverScreen = ({ navigation }: { navigation: any }) => {
 export default DiscoverScreen;
 
 const styles = StyleSheet.create({
-  searchContainer: { marginVertical: 10, borderRadius: 50 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#74C33C', borderRadius: 50, height: 45 },
-  input: { flex: 1, color: '#fff', fontSize: 16, paddingHorizontal: 10 },
+  root: { flex: 1, backgroundColor: '#fff' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  // Use paddingBottom in points so it is the same across all screen sizes
+  content: { paddingBottom: 120 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: 5,
+  },
+  locationBtn: { flexDirection: 'row', alignItems: 'center', gap: 4, flex: 1, marginRight: 12 },
+  locationTextWrap: { flex: 1 },
+  locationLabel: { fontSize: 16, fontWeight: '700', color: '#fff' },
+  locationCity: { fontSize: 12, fontWeight: '400', color: '#ffffffde' },
+  bellBtn: { backgroundColor: '#74C33C', borderRadius: 50, padding: 8 },
+  pageTitle: { fontSize: 25, fontWeight: '700', color: '#012D2E', marginTop: 20 },
+  searchContainer: { marginVertical: 10 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#74C33C',
+    borderRadius: 50,
+    height: 45,
+    paddingHorizontal: 14,
+  },
+  input: { flex: 1, color: '#fff', fontSize: 16, paddingHorizontal: 8 },
+  sectionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 5,
+    marginTop: 10,
+  },
+  sectionLeft: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  sectionTitle: { fontSize: 16, fontWeight: '700', color: '#012D2E' },
+  seeMore: { fontSize: 12, color: '#111' },
+  categoryScroll: { paddingLeft: 2, paddingRight: 4, paddingBottom: 6 },
+  categoryItem: { marginRight: 12 },
+  hListContent: { paddingVertical: 5, paddingRight: 4 },
+  emptyText: { color: '#999', fontSize: 13, paddingVertical: 10 },
 });

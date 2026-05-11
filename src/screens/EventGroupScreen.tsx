@@ -3,7 +3,8 @@ import {
   View, Text, StyleSheet, TouchableOpacity, FlatList, StatusBar, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { BackIcon, HeartIcon } from '../components/SvgIcons';
+import Icon from '../components/Icon';
 import EventCard from '../components/EventCard';
 import EventList from '../components/EventList';
 import { fetchEvents, Event } from '../services/eventService';
@@ -33,11 +34,11 @@ const EventGroupScreen = ({ route, navigation }: { route: any; navigation: any }
       <StatusBar barStyle="dark-content" backgroundColor="white" />
       <View style={styles.header}>
         <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#008E6D" />
+          <Icon name="arrow-back" size={24} color="#008E6D" />
           <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
         <TouchableOpacity style={styles.settingsIcon}>
-          <Ionicons name="options-outline" size={20} color="white" />
+          <Icon name="options-outline" size={20} color="white" />
         </TouchableOpacity>
       </View>
 
