@@ -13,8 +13,9 @@ import {
   View,
 } from 'react-native';
 import Icon from '../components/Icon';
-import { getUser } from '../store/authStore';
+import { getUser, clearAuth } from '../store/authStore';
 import { AuthUser } from '../services/authService';
+import { Alert } from 'react-native';
 
 const { width } = Dimensions.get('window');
 
@@ -52,7 +53,7 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
     : user?.email ? `@${user.email.split('@')[0]}` : '@guest';
   const profileBio = user?.bio || (isAuthenticated ? 'No bio available' : 'Please login to see your profile');
   const profileWebsite = user?.website || '';
-  const profileImage = user?.avatar ? { uri: user.avatar } : require('../assets/onboard3.png');
+  const profileImage = user?.avatar ? { uri: user.avatar } : null;
 
   if (loading) {
     return (
@@ -72,9 +73,20 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
           <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
             <Text style={styles.backText}>Back</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.settingsCircle} onPress={() => navigation.navigate('Notifications')}>
-            <Icon name="notifications" size={20} color="#fff" />
-          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => navigation.navigate('Notifications')}
+            >
+              <Icon name="notifications-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => navigation.navigate('NotificationSettings')}
+            >
+              <Icon name="settings-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
         </View>
 
         <Text style={styles.mainTitle}>Profile</Text>
@@ -84,7 +96,13 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
             {/* User section */}
             <View style={styles.userSection}>
               <View style={styles.avatarContainer}>
-                <Image source={profileImage} style={styles.avatarImage} />
+                {profileImage ? (
+                  <Image source={profileImage} style={styles.avatarImage} />
+                ) : (
+                  <View style={[styles.avatarImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0' }]}>
+                    <Icon name="person" size={50} color="#94a3b8" />
+                  </View>
+                )}
                 <TouchableOpacity
                   style={styles.cameraBadge}
                   onPress={() => navigation.navigate('Editprofile', { userName: user?.username || '' })}
@@ -128,9 +146,9 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
 
               <TouchableOpacity
                 style={[styles.darkActionButton, { width: ACTION_BTN_WIDTH }]}
-                onPress={() => navigation.navigate('Adminpanel')}
+                onPress={() => navigation.navigate('VenueAdminScreen')}
               >
-                <Icon name="tv-sharp" size={25} color="#fff" />
+                <Icon name="storefront-outline" size={25} color="#fff" />
                 <Text style={styles.actionText}>Admin Panel</Text>
               </TouchableOpacity>
             </View>
@@ -184,6 +202,28 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
           ))}
         </View>
 
+        {isAuthenticated && (
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={() => {
+              Alert.alert('Log Out', 'Are you sure you want to log out?', [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Log Out',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await clearAuth();
+                    setUser(null);
+                    navigation.replace('Loginscreen');
+                  }
+                }
+              ]);
+            }}
+          >
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        )}
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -197,7 +237,8 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 15, paddingBottom: 120 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
   backText: { fontSize: 18, color: '#012D2E', fontWeight: 'bold' },
-  settingsCircle: {
+  headerRight: { flexDirection: 'row', gap: 10 },
+  headerIconBtn: {
     width: 42, height: 42, backgroundColor: '#008E6D',
     borderRadius: 21, justifyContent: 'center', alignItems: 'center',
   },
@@ -273,5 +314,17 @@ const styles = StyleSheet.create({
   },
   optionTextContainer: { marginLeft: 14, flex: 1, minWidth: 0 },
   optionTitle: { fontSize: 14, fontWeight: 'bold', color: '#001D1D' },
+  logoutButton: {
+    marginTop: 30,
+    backgroundColor: '#ffe5e5',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#ef4444',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
   optionSub: { fontSize: 11, color: '#666', marginTop: 2 },
 });

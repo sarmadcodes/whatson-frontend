@@ -2,6 +2,19 @@ import axios from 'axios';
 import { API_BASE_URL } from '../config/api';
 import { getToken } from '../store/authStore';
 
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  timeout: 8000,
+});
+
+api.interceptors.request.use(async (config) => {
+  const token = await getToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => Promise.reject(error));
+
 export interface Event {
   _id: string;
   title: string;
@@ -18,6 +31,7 @@ export interface Event {
   galleryImages: string[];
   openingHours: { day: string; hours: string }[];
   isFeatured: boolean;
+  isActive?: boolean;
   status?: 'pending' | 'approved' | 'rejected';
   tags: string[];
   latitude: number | null;
@@ -25,11 +39,6 @@ export interface Event {
   distanceKm?: number;
   createdAt: string;
 }
-
-const getAuthHeader = async () => {
-  const token = await getToken();
-  return token ? { Authorization: `Bearer ${token}` } : {};
-};
 
 // Get all events — optional filters: category, isFeatured, search, limit
 export const fetchEvents = async (params?: {
@@ -41,39 +50,33 @@ export const fetchEvents = async (params?: {
   mine?: boolean;
   includeAll?: boolean;
 }): Promise<Event[]> => {
-  const headers = await getAuthHeader();
-  const response = await axios.get(`${API_BASE_URL}/events`, { headers, params });
+  const response = await api.get(`/events`, { params });
   return response.data.events;
 };
 
 // Get single event by ID
 export const fetchEventById = async (id: string): Promise<Event> => {
-  const headers = await getAuthHeader();
-  const response = await axios.get(`${API_BASE_URL}/events/${id}`, { headers });
+  const response = await api.get(`/events/${id}`);
   return response.data.event;
 };
 
 export const fetchMyEvents = async (): Promise<Event[]> => {
-  const headers = await getAuthHeader();
-  const response = await axios.get(`${API_BASE_URL}/events/mine`, { headers });
+  const response = await api.get(`/events/mine`);
   return response.data.events;
 };
 
 export const createEvent = async (payload: Partial<Event>): Promise<Event> => {
-  const headers = await getAuthHeader();
-  const response = await axios.post(`${API_BASE_URL}/events`, payload, { headers });
+  const response = await api.post(`/events`, payload);
   return response.data.event;
 };
 
 export const approveEvent = async (id: string): Promise<Event> => {
-  const headers = await getAuthHeader();
-  const response = await axios.patch(`${API_BASE_URL}/events/${id}/approve`, {}, { headers });
+  const response = await api.patch(`/events/${id}/approve`, {});
   return response.data.event;
 };
 
 export const rejectEvent = async (id: string): Promise<Event> => {
-  const headers = await getAuthHeader();
-  const response = await axios.patch(`${API_BASE_URL}/events/${id}/reject`, {}, { headers });
+  const response = await api.patch(`/events/${id}/reject`, {});
   return response.data.event;
 };
 
@@ -84,7 +87,6 @@ export const fetchNearbyEvents = async (
   radiusKm: number = 50,
   city?: string,
 ): Promise<Event[]> => {
-  const headers = await getAuthHeader();
   const params: Record<string, any> = {};
   if (userLat !== undefined && userLng !== undefined) {
     params.lat = userLat;
@@ -94,6 +96,6 @@ export const fetchNearbyEvents = async (
   if (city) {
     params.city = city;
   }
-  const response = await axios.get(`${API_BASE_URL}/events/nearby`, { headers, params });
+  const response = await api.get(`/events/nearby`, { params });
   return response.data.events;
 };

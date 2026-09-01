@@ -7,9 +7,9 @@ import {
   SafeAreaView, 
   Dimensions,
   ScrollView,
-  StatusBar
+  StatusBar,
+  ImageBackground
 } from 'react-native';
-import LinearGradient from 'react-native-linear-gradient';
 
 const { width, height } = Dimensions.get('window');
 
@@ -22,16 +22,19 @@ const SplashScreen = ({ navigation }: { navigation: any }) => {
       title: "What's On",
       subtitle: "Your night out, sorted",
       description: "Discover what's happening around you: live music, comedy, events, nightlife & more.",
+      image: require('../assets/onboard1.png'),
     },
     {
       title: "Find What's Nearby",
       subtitle: "Events at your fingertips.",
       description: "Explore bars, venues and events near you with our location-based discovery.",
+      image: require('../assets/onboard2.png'),
     },
     {
       title: "Plan Your Night",
       subtitle: "Never miss a thing.",
       description: "From pub quizzes to DJ sets—find the perfect way to spend your evening.",
+      image: require('../assets/onboard3.png'),
     }
   ];
 
@@ -48,7 +51,7 @@ const SplashScreen = ({ navigation }: { navigation: any }) => {
   };
 
   useEffect(() => {
-    let timer: NodeJS.Timeout;
+    let timer: ReturnType<typeof setTimeout>;
     if (step === 0) {
       timer = setTimeout(() => {
         handleNext();
@@ -83,9 +86,10 @@ const SplashScreen = ({ navigation }: { navigation: any }) => {
         >
           {onboardingData.map((slide, index) => (
             <View key={index} style={styles.slideWrapper}>
-              <LinearGradient
-                colors={['#008E6D', '#012D2E']}
+              <ImageBackground
+                source={slide.image}
                 style={styles.topImage}
+                resizeMode="cover"
               >
                 <SafeAreaView style={styles.topControls}>
                   <TouchableOpacity 
@@ -98,7 +102,7 @@ const SplashScreen = ({ navigation }: { navigation: any }) => {
                     <Text style={styles.skipText}>Skip</Text>
                   </TouchableOpacity>
                 </SafeAreaView>
-              </LinearGradient>
+              </ImageBackground>
 
               <View style={styles.contentArea}>
                 <View style={styles.greenIconBox}> 

@@ -90,21 +90,24 @@ const VenueAdminScreen = ({ navigation }: { navigation: any }) => {
     </View>
   );
 
-  const VenueItem = ({ item }: { item: Event }) => (
-    <View style={styles.venueItem}>
-      <View style={styles.venueItemContent}>
-        <Image source={{ uri: item.imageUrl }} style={styles.venueImage} resizeMode='cover' />
-        <View style={styles.venueDetails}>
-          <Text style={styles.venueTitle} numberOfLines={1}>{item.title}</Text>
-          <Text style={styles.venueEvents}>{item.city}</Text>
-          <Text style={styles.venueTime}>{item.date || ''}</Text>
-        </View>
-        <View style={[styles.statusBadge, { backgroundColor: item.status === 'approved' ? THEME.STATUS_GREEN : THEME.STATUS_GREY }]}>
-          <Text style={styles.statusText}>{item.status}</Text>
+  const VenueItem = ({ item }: { item: Event }) => {
+    const statusColor = item.status === 'approved' ? '#10b981' : item.status === 'pending' ? '#f59e0b' : '#ef4444';
+    return (
+      <View style={[styles.venueItem, { borderLeftWidth: 4, borderLeftColor: statusColor }]}>
+        <View style={styles.venueItemContent}>
+          <Image source={{ uri: item.imageUrl }} style={styles.venueImage} resizeMode='cover' />
+          <View style={styles.venueDetails}>
+            <Text style={styles.venueTitle} numberOfLines={1}>{item.title}</Text>
+            <Text style={styles.venueEvents}>{item.city}</Text>
+            <Text style={styles.venueTime}>{item.date || ''}</Text>
+          </View>
+          <View style={[styles.statusBadge, { backgroundColor: statusColor }]}>
+            <Text style={styles.statusText}>{item.status}</Text>
+          </View>
         </View>
       </View>
-    </View>
-  );
+    );
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>

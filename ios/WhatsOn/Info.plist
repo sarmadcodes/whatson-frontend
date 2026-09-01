@@ -38,6 +38,8 @@
 	<string>We use your location to show nearby events on the map.</string>
 	<key>NSLocationAlwaysUsageDescription</key>
 	<string>We use your location to show nearby events around your city.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Allow WhatsOn to access your photos so you can set a profile picture or upload an event image.</string>
 	<key>GMSApiKey</key>
 	<string>AIzaSyDJ1MCYtNPp6jezzUqCR7ndLdCfYN-OyB0</string>
 	<key>UILaunchStoryboardName</key>

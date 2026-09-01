@@ -13,6 +13,7 @@ import RegisterScreen from './src/screens/RegisterScreen';
 import AdminPanel from './src/screens/AdminPanel';
 import EditProfile from './src/screens/EditProfile';
 import InnerEventScreen from './src/screens/InnerEventScreen';
+import VenueAdminScreen from './src/screens/VenueAdminScreen';
 import CateDetailScreen from './src/screens/CateDetailScreen';
 import EventGroupScreen from './src/screens/EventGroupScreen';
 import SavedEvents from './src/screens/SavedEvents';
@@ -41,6 +42,7 @@ const App = () => {
         <Stack.Screen name="Notifications" component={NotificationsScreen} />
         <Stack.Screen name="NotificationSettings" component={NotificationSettings} />
         <Stack.Screen name="Adminpanel" component={AdminPanel} />
+        <Stack.Screen name="VenueAdminScreen" component={VenueAdminScreen} />
         <Stack.Screen name="Editprofile" component={EditProfile} />
         <Stack.Screen name="ManageEvents" component={ManageEvents} />
         <Stack.Screen name="Innerevetscreen" component={InnerEventScreen} />

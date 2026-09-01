@@ -24,9 +24,7 @@ const AVATAR_SIZE = Math.min(100, width * 0.24);
 const EditProfile = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [previewVisible, setPreviewVisible] = useState(false);
-  const [profileImage, setProfileImage] = useState(
-    'https://png.pngtree.com/png-vector/20230903/ourmid/pngtree-3d-illustration-avatar-profile-man-png-image_9945226.png'
-  );
+  const [profileImage, setProfileImage] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -71,7 +69,7 @@ const EditProfile = () => {
           bio: user.bio || '',
           website: user.website || '',
         });
-        if (user.avatar) setProfileImage(user.avatar);
+        setProfileImage(user.avatar || null);
       } catch (err: any) {
         console.warn('Failed to load profile', err?.message || err);
       }
@@ -124,7 +122,7 @@ const EditProfile = () => {
         bio: updated.bio || '',
         website: updated.website || '',
       });
-      if (updated.avatar) setProfileImage(updated.avatar);
+      setProfileImage(updated.avatar || null);
       setIsEditing(false);
     } catch (err: any) {
       console.warn('Save profile failed', err?.message || err);
@@ -156,11 +154,17 @@ const EditProfile = () => {
           <View style={styles.avatarSection}>
             {/* Tap avatar to preview; tap camera badge to pick */}
             <View style={styles.avatarWrapper}>
-              <TouchableOpacity onPress={() => setPreviewVisible(true)} activeOpacity={0.85}>
-                <Image
-                  source={{ uri: profileImage ? `${profileImage}?t=${Date.now()}` : profileImage }}
-                  style={[styles.avatarImage, !isEditing && { opacity: 0.75 }]}
-                />
+              <TouchableOpacity onPress={() => profileImage && setPreviewVisible(true)} activeOpacity={0.85}>
+                {profileImage ? (
+                  <Image
+                    source={{ uri: `${profileImage}?t=${Date.now()}` }}
+                    style={[styles.avatarImage, !isEditing && { opacity: 0.75 }]}
+                  />
+                ) : (
+                  <View style={[styles.avatarImage, { backgroundColor: '#f0f0f0', justifyContent: 'center', alignItems: 'center' }]}>
+                    <Text style={{ fontSize: 40, color: '#ccc' }}>👤</Text>
+                  </View>
+                )}
               </TouchableOpacity>
 
               {/* Camera badge — positioned relative to the avatar circle */}
@@ -252,7 +256,13 @@ const EditProfile = () => {
       {/* Full-image preview modal */}
       <Modal visible={previewVisible} transparent animationType="fade" onRequestClose={() => setPreviewVisible(false)}>
         <TouchableOpacity style={styles.previewOverlay} onPress={() => setPreviewVisible(false)} activeOpacity={1}>
-          <Image source={{ uri: profileImage }} style={styles.previewImage} resizeMode="contain" />
+          {profileImage ? (
+            <Image source={{ uri: `${profileImage}?t=${Date.now()}` }} style={styles.previewImage} resizeMode="contain" />
+          ) : (
+             <View style={[styles.previewImage, { backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }]}>
+               <Text style={{ fontSize: 100 }}>👤</Text>
+             </View>
+          )}
         </TouchableOpacity>
       </Modal>
     </SafeAreaView>
