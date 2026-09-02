@@ -1,19 +1,21 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import Icon from './Icon';
 
-const CategoryCard = ({
-  icon,
-  label,
-  count,
-  size = 60,
-  onPress,
-}) => {
+type CategoryCardProps = {
+  icon: string;
+  label: string;
+  count?: number;
+  size?: number;
+  onPress?: () => void;
+};
+
+const CategoryCard = ({ icon, label, count, size = 60, onPress }: CategoryCardProps) => {
   return (
     <TouchableOpacity style={styles.wrapper} onPress={onPress} activeOpacity={0.8}>
       
       <View style={[styles.card, { width: size, height: size }]}>
-        <Ionicons name={icon} size={size * 0.35} color="#fff" />
+        <Icon name={icon} size={size * 0.35} color="#fff" />
       </View>
 
       <Text style={styles.label}>{label}</Text>

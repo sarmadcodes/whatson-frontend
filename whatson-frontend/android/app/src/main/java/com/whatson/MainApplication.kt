@@ -1,4 +1,4 @@
-package com.whatson
+package com.whaton
 
 import android.app.Application
 import com.facebook.react.PackageList

@@ -1,7 +1,13 @@
 import React from 'react';
 import { View, Text, Image, StyleSheet, TouchableOpacity } from 'react-native';
+import { Event } from '../services/eventService';
 
-const EventList = ({ item, onPress }) => {
+interface EventListProps {
+  item: Event | any;
+  onPress: () => void;
+}
+
+const EventList = ({ item, onPress }: EventListProps) => {
   return (
     <TouchableOpacity style={styles.cardContainer} activeOpacity={0.75} onPress={onPress}>
       {/* Event Image */}
@@ -14,7 +20,7 @@ const EventList = ({ item, onPress }) => {
         </Text>
         <Text style={styles.subText}>{item.venue}</Text>
         <Text style={styles.subText}>
-          {item.day} • {item.time}
+          {item.date || item.day} • {item.time}
         </Text>
       </View>
 
@@ -22,8 +28,8 @@ const EventList = ({ item, onPress }) => {
       <View style={styles.rightContainer}>
         {item.isFree ? (
           <View style={styles.freeBadge}>
-            <Text style={styles.ticketIcon}>🎫</Text>
-            <Text style={styles.freeText}>Free Entry</Text>
+            <Text style={styles.ticketIcon}>Free Entry</Text>
+            <Text style={styles.freeText}></Text>
           </View>
         ) : (
           <Text style={styles.priceText}>£ {item.price}</Text>

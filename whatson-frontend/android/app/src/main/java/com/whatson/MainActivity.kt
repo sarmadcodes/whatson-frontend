@@ -1,4 +1,4 @@
-package com.whatson
+package com.whaton
 
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate

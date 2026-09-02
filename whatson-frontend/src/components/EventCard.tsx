@@ -8,22 +8,22 @@ import {
   TouchableOpacity,
 } from 'react-native';
 import LinearGradient from 'react-native-linear-gradient';
+import { Event } from '../services/eventService';
 
 const { width } = Dimensions.get('window');
 // Setting width so 2 cards show, and the 3rd peaks (Horizontal scroll)
-const CARD_WIDTH = width * 0.44; 
+const CARD_WIDTH = width * 0.44;
 
-const EventCard = ({ data, onPress }) => {
-  const {
-    image,
-    title,
-    location,
-    timeLabel,
-    category,
-    price,
-    isFree,
-    extraTag,
-  } = data;
+interface EventCardProps {
+  data: Event | any;
+  onPress: () => void;
+}
+
+const EventCard = ({ data, onPress }: EventCardProps) => {
+  const { imageUrl, image, title, city, location, time, timeLabel, category, price, isFree, extraTag } = data;
+  const imgSource = imageUrl || image;
+  const locationText = city || location;
+  const timeText = time || timeLabel;
 
   // Auto-detecting if it should show the "Extra Tag" (Price/Food) layout
   const isDetailed = !!extraTag || !!price;
@@ -35,7 +35,7 @@ const EventCard = ({ data, onPress }) => {
       style={styles.cardContainer}
     >
       <ImageBackground
-        source={{ uri: image }}
+        source={{ uri: imgSource }}
         style={styles.background}
         imageStyle={{ borderRadius: 10 }} // Matches rounded corners in image
       >
@@ -54,7 +54,7 @@ const EventCard = ({ data, onPress }) => {
           )}
           {isFree && (
             <View style={styles.freeBadge}>
-              <Text style={styles.freeText}>🎫 Free Entry</Text>
+              <Text style={styles.freeText}>Free</Text>
             </View>
           )}
         </View>
@@ -65,10 +65,10 @@ const EventCard = ({ data, onPress }) => {
           
           <View style={styles.infoGrid}>
             <View style={styles.infoItem}>
-              <Text style={styles.infoText}>📍 {location}</Text>
+              <Text style={styles.infoText}>📍 {locationText}</Text>
             </View>
             <View style={styles.infoItem}>
-              <Text style={styles.infoText}>🕒 {timeLabel}</Text>
+              <Text style={styles.infoText}>🕒 {timeText}</Text>
             </View>
           </View>
 
@@ -94,12 +94,7 @@ const styles = StyleSheet.create({
     height: 140,
     marginRight: 12,
     borderRadius: 10,
-    // Shadow/Elevation
-    elevation:2
-    // shadowColor: "#000",
-    // shadowOffset: { width: 0, height: 4 },
-    // shadowOpacity: 0.3,
-    // shadowRadius: 4.65,
+    elevation: 2,
   },
   background: {
     flex: 1,
@@ -111,7 +106,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    height: '70%', // Covers bottom half
+    height: '70%',
     borderRadius: 10,
   },
   topRow: {
@@ -120,7 +115,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   categoryBadge: {
-    backgroundColor: '#6FCF2D', // Bright green from your image
+    backgroundColor: '#6FCF2D',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 50,
@@ -154,7 +149,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   infoItem: {
-    width: '48%', // Splits bottom into two columns
+    width: '48%',
     marginBottom: 2,
   },
   infoText: {

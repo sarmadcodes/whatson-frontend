@@ -7,7 +7,7 @@ import {
   FlatList,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import Icon from '../components/Icon';
 
 const NotificationsScreen = ({ navigation }) => {
 
@@ -58,7 +58,7 @@ const NotificationsScreen = ({ navigation }) => {
 
         <View style={styles.headerRight}>
           {/* <TouchableOpacity style={styles.iconBtn}>
-            <Ionicons name="ellipsis-horizontal" size={18} color="#000" />
+            <Icon name="ellipsis-horizontal" size={18} color="#000" />
           </TouchableOpacity> */}
         </View>
       </View>

@@ -11,7 +11,8 @@ import {
   UIManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import { BackIcon } from '../components/SvgIcons';
+import Icon from '../components/Icon';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -54,7 +55,7 @@ const HelpSupportScreen = ({ navigation }) => {
           onPress={() => navigation.navigate('Notifications')}
           style={styles.notifCircle}
         >
-          <Ionicons name="notifications" size={20} color="white" />
+          <Icon name="notifications" size={20} color="white" />
         </TouchableOpacity>
       </View>
 
@@ -73,13 +74,13 @@ const HelpSupportScreen = ({ navigation }) => {
                   style={styles.cardHeader}
                 >
                   <View style={styles.iconBackground}>
-                    <Ionicons name={item.icon} size={20} color="white" />
+                    <Icon name={item.icon} size={20} color="white" />
                   </View>
                   <View style={styles.textContainer}>
                     <Text style={styles.cardTitle}>{item.title}</Text>
                     <Text style={styles.cardMeta}>{item.meta}</Text>
                   </View>
-                  <Ionicons 
+                  <Icon 
                     name={isExpanded ? "chevron-up" : "chevron-down"} 
                     size={20} 
                     color="#888" 

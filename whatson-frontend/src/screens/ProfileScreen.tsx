@@ -1,119 +1,229 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  Image, StatusBar, StyleSheet, Text,
-  TouchableOpacity, View, ActivityIndicator,
+  ActivityIndicator,
+  Dimensions,
+  Image,
+  Linking,
+  SafeAreaView,
+  ScrollView,
+  StatusBar,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from 'react-native';
-import { ScrollView } from 'react-native-gesture-handler';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import Icon from '../components/Icon';
 import { getUser, clearAuth } from '../store/authStore';
 import { AuthUser } from '../services/authService';
+import { Alert } from 'react-native';
+
+const { width } = Dimensions.get('window');
+
+// Action buttons: 2 per row with gap, never overflow
+const ACTION_BTN_WIDTH = (width - 30 - 10) / 2; // padding 15*2, gap 10
 
 const ProfileScreen = ({ navigation }: { navigation: any }) => {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const isAuthenticated = !!user?.email;
 
-  useEffect(() => {
-    const loadUser = async () => {
-      const storedUser = await getUser();
-      setUser(storedUser);
-      setLoading(false);
-    };
-    loadUser();
-  }, []);
-
-  const handleLogout = async () => {
-    await clearAuth();
-    navigation.reset({ index: 0, routes: [{ name: 'Loginscreen' }] });
+  const loadUser = async () => {
+    const storedUser = await getUser();
+    setUser(storedUser);
+    setLoading(false);
   };
 
-  const featureData = [
-    { title: 'Saved Events', metaText: 'Your favourite events', tipIcon: 'heart', screen: 'Savedevents' },
-    { title: 'Notifications', metaText: 'Manage your alerts', tipIcon: 'notifications', screen: 'NotificationSettings' },
-    { title: 'Location', metaText: 'Belfast, Northern Ireland', tipIcon: 'location', screen: 'Locationscreen' },
-    { title: 'Share App', metaText: "Tell friends about What's On", tipIcon: 'share-sharp', screen: '' },
-    { title: 'Help & Support', metaText: 'FAQs and contact', tipIcon: 'help-outline', screen: 'HelpSupport' },
-  ];
+  useEffect(() => {
+    loadUser();
+    const unsubscribe = navigation.addListener('focus', () => { loadUser(); });
+    return unsubscribe;
+  }, [navigation]);
+
+  const featureData = useMemo(() => [
+    { id: '1', title: 'Saved Events', sub: 'Your favourite events', icon: 'heart', screen: 'Savedevents' },
+    { id: '2', title: 'Notifications', sub: 'Manage your alerts', icon: 'notifications', screen: 'NotificationSettings' },
+    { id: '3', title: 'Location', sub: 'Belfast, Northern Ireland', icon: 'location', screen: 'Locationscreen' },
+    { id: '4', title: 'Share App', sub: "Tell friends about What's On", icon: 'share-sharp', screen: '' },
+    { id: '5', title: 'Help & Support', sub: 'FAQs and contact', icon: 'help-outline', screen: 'HelpSupport' },
+  ], []);
+
+  const displayName = user?.fullName || 'Guest User';
+  const handleName = user?.username
+    ? `@${user.username}`
+    : user?.email ? `@${user.email.split('@')[0]}` : '@guest';
+  const profileBio = user?.bio || (isAuthenticated ? 'No bio available' : 'Please login to see your profile');
+  const profileWebsite = user?.website || '';
+  const profileImage = user?.avatar ? { uri: user.avatar } : null;
 
   if (loading) {
     return (
-      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' }}>
+      <SafeAreaView style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#008E6D" />
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff', paddingHorizontal: 15, paddingTop: 15 }}>
-      <StatusBar barStyle="dark-content" backgroundColor="white" />
+    <SafeAreaView style={styles.container}>
+      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
 
-      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 5 }}>
-        <TouchableOpacity onPress={() => navigation.goBack()}>
-          <Text style={{ fontSize: 16, fontWeight: '700', color: '#111' }}>Back</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => navigation.navigate('Notifications')}
-          style={{ backgroundColor: '#008E6D', borderRadius: 50, padding: 8 }}>
-          <Ionicons name="notifications" size={20} color="white" />
-        </TouchableOpacity>
-      </View>
+        {/* Header */}
+        <View style={styles.header}>
+          <TouchableOpacity onPress={() => navigation.goBack()} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+          <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => navigation.navigate('Notifications')}
+            >
+              <Icon name="notifications-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.headerIconBtn}
+              onPress={() => navigation.navigate('NotificationSettings')}
+            >
+              <Icon name="settings-outline" size={20} color="#fff" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ paddingBottom: '40%' }}>
-          <Text style={{ fontSize: 25, fontWeight: '700', color: '#008E6D', marginTop: 20 }}>Profile</Text>
+        <Text style={styles.mainTitle}>Profile</Text>
 
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 10, marginTop: 12 }}>
-            <Image
-              source={require('../assets/onboard3.png')}
-              style={styles.profilepic}
-            />
-            <View>
-              <Text style={styles.fullname}>{user?.fullName || 'Your Name'}</Text>
-              <Text style={styles.userdata}>{user?.email || 'your@email.com'}</Text>
+        {isAuthenticated ? (
+          <>
+            {/* User section */}
+            <View style={styles.userSection}>
+              <View style={styles.avatarContainer}>
+                {profileImage ? (
+                  <Image source={profileImage} style={styles.avatarImage} />
+                ) : (
+                  <View style={[styles.avatarImage, { justifyContent: 'center', alignItems: 'center', backgroundColor: '#e2e8f0' }]}>
+                    <Icon name="person" size={50} color="#94a3b8" />
+                  </View>
+                )}
+                <TouchableOpacity
+                  style={styles.cameraBadge}
+                  onPress={() => navigation.navigate('Editprofile', { userName: user?.username || '' })}
+                >
+                  <Icon name="camera" size={14} color="#fff" />
+                </TouchableOpacity>
+              </View>
+
+              <View style={styles.userText}>
+                <Text style={styles.userNameDisplay} numberOfLines={1}>{displayName}</Text>
+                <Text style={styles.userHandleDisplay} numberOfLines={1}>{handleName}</Text>
+                <Text style={styles.userBioDisplay}>{profileBio}</Text>
+                {profileWebsite ? (
+                  <TouchableOpacity
+                    onPress={() => Linking.openURL(profileWebsite.startsWith('http') ? profileWebsite : `https://${profileWebsite}`)}
+                  >
+                    <Text style={styles.websiteLink} numberOfLines={1}>{profileWebsite}</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            </View>
+
+            {/* Edit button — full width minus padding */}
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => navigation.navigate('Editprofile', { userName: user?.username || '' })}
+            >
+              <Icon name="pencil" size={18} color="#fff" />
+              <Text style={styles.editButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+
+            {/* Action row */}
+            <View style={styles.actionRow}>
+              <TouchableOpacity
+                style={[styles.darkActionButton, { width: ACTION_BTN_WIDTH }]}
+                onPress={() => navigation.navigate('ManageEvents')}
+              >
+                <Icon name="calendar-outline" size={25} color="#fff" />
+                <Text style={styles.actionText}>Manage Your Events</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.darkActionButton, { width: ACTION_BTN_WIDTH }]}
+                onPress={() => navigation.navigate('VenueAdminScreen')}
+              >
+                <Icon name="storefront-outline" size={25} color="#fff" />
+                <Text style={styles.actionText}>Admin Panel</Text>
+              </TouchableOpacity>
+            </View>
+          </>
+        ) : (
+          <View style={styles.guestCard}>
+            <Image source={require('../assets/onboard3.png')} style={styles.avatarImage} />
+            <Text style={styles.guestTitle}>Welcome to What's On</Text>
+            <Text style={styles.guestText}>
+              Sign in to save events, manage your event submissions, and update your profile.
+            </Text>
+            <View style={styles.guestActions}>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Loginscreen')}
+                activeOpacity={0.75}
+                style={styles.primaryBtn}
+              >
+                <Text style={styles.primaryBtnText}>Login</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => navigation.navigate('Registerscreen')}
+                activeOpacity={0.75}
+                style={styles.secondaryBtn}
+              >
+                <Text style={styles.secondaryBtnText}>Register</Text>
+              </TouchableOpacity>
             </View>
           </View>
+        )}
 
-          <TouchableOpacity activeOpacity={0.75} onPress={() => navigation.navigate('Editprofile')}
-            style={{ backgroundColor: '#008E6D', padding: 10, borderRadius: 50, flexDirection: 'row', gap: 6, alignItems: 'center', justifyContent: 'center', marginVertical: 5 }}>
-            <Ionicons name="pencil" size={15} color="#fff" />
-            <Text style={{ color: 'white', fontSize: 14, fontWeight: '600', textAlign: 'center' }}>Edit Profile</Text>
-          </TouchableOpacity>
-
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 15 }}>
-            <TouchableOpacity onPress={() => navigation.navigate('Loginscreen')}
-              activeOpacity={0.75} style={styles.logincardbtn}>
-              <Ionicons name="person-circle" size={25} color="#ffffffde" />
-              <Text style={styles.btntext}>Venue Login</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => navigation.navigate('Adminpanel')}
-              activeOpacity={0.75} style={styles.logincardbtn}>
-              <Ionicons name="tv-sharp" size={25} color="#ffffffde" />
-              <Text style={styles.btntext}>Admin Panel</Text>
-            </TouchableOpacity>
-          </View>
-
-          {featureData.map((item, i) => (
+        {/* Options list */}
+        <View style={styles.optionsList}>
+          {featureData.map(item => (
             <TouchableOpacity
-              key={i}
-              style={styles.tipCard}
+              key={item.id}
+              style={styles.optionItem}
               onPress={() => item.screen && navigation.navigate(item.screen)}
+              activeOpacity={0.75}
             >
-              <View style={styles.tipicon}>
-                <Ionicons name={item.tipIcon as any} size={20} color="#ffffffde" />
+              <View style={styles.optionLeft}>
+                <View style={styles.iconCircle}>
+                  <Icon name={item.icon as any} size={18} color="#fff" />
+                </View>
+                <View style={styles.optionTextContainer}>
+                  <Text style={styles.optionTitle}>{item.title}</Text>
+                  <Text style={styles.optionSub}>{item.sub}</Text>
+                </View>
               </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.tipTitle} numberOfLines={1}>{item.title}</Text>
-                <Text style={styles.tipTime}>{item.metaText}</Text>
-              </View>
-              <Text style={styles.arrowIcon}>〉</Text>
+              <Icon name="chevron-forward" size={16} color="#c4cdd2" />
             </TouchableOpacity>
           ))}
-
-          <TouchableOpacity onPress={handleLogout}
-            style={{ backgroundColor: '#ff4444', padding: 14, borderRadius: 50, alignItems: 'center', marginTop: 20 }}>
-            <Text style={{ color: 'white', fontWeight: '700', fontSize: 15 }}>Logout</Text>
-          </TouchableOpacity>
-
         </View>
+
+        {isAuthenticated && (
+          <TouchableOpacity 
+            style={styles.logoutButton}
+            onPress={() => {
+              Alert.alert('Log Out', 'Are you sure you want to log out?', [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                  text: 'Log Out',
+                  style: 'destructive',
+                  onPress: async () => {
+                    await clearAuth();
+                    setUser(null);
+                    navigation.replace('Loginscreen');
+                  }
+                }
+              ]);
+            }}
+          >
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        )}
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -122,14 +232,99 @@ const ProfileScreen = ({ navigation }: { navigation: any }) => {
 export default ProfileScreen;
 
 const styles = StyleSheet.create({
-  profilepic: { width: 75, height: 75, borderRadius: 50, borderWidth: 1 },
-  fullname: { fontSize: 18, fontWeight: '600', letterSpacing: 0.75 },
-  userdata: { fontSize: 12, fontWeight: '500', letterSpacing: 0.66, color: '#555' },
-  logincardbtn: { backgroundColor: '#012D2E', alignItems: 'center', padding: 20, borderRadius: 8, width: '45%' },
-  btntext: { fontSize: 14, fontWeight: '600', color: '#ffffffde', marginVertical: 3 },
-  tipCard: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderRadius: 8, paddingVertical: 10, paddingHorizontal: 15, marginVertical: 10, borderWidth: 1, borderColor: '#ddd' },
-  tipTitle: { fontSize: 14, fontWeight: '700', color: '#012D2E' },
-  tipTime: { fontSize: 10, marginTop: 2, color: '#012d2ede' },
-  arrowIcon: { fontSize: 12, color: '#888' },
-  tipicon: { borderRadius: 50, backgroundColor: '#008E6D', padding: 8, marginRight: 7 },
+  container: { flex: 1, backgroundColor: '#fff' },
+  loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff' },
+  scrollContent: { paddingHorizontal: 15, paddingBottom: 120 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingTop: 10 },
+  backText: { fontSize: 18, color: '#012D2E', fontWeight: 'bold' },
+  headerRight: { flexDirection: 'row', gap: 10 },
+  headerIconBtn: {
+    width: 42, height: 42, backgroundColor: '#008E6D',
+    borderRadius: 21, justifyContent: 'center', alignItems: 'center',
+  },
+  mainTitle: { fontSize: 35, fontWeight: 'bold', color: '#008E6D', marginTop: 20, marginBottom: 25 },
+  userSection: { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 25 },
+  avatarContainer: { position: 'relative', flexShrink: 0 },
+  avatarImage: { width: 90, height: 90, borderRadius: 45, backgroundColor: '#008E6D' },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: -4,
+    right: -4,
+    backgroundColor: '#74C33C',
+    width: 28, height: 28, borderRadius: 14,
+    justifyContent: 'center', alignItems: 'center',
+    borderWidth: 2, borderColor: '#fff',
+  },
+  userText: { marginLeft: 16, flex: 1, minWidth: 0 },
+  userNameDisplay: { fontSize: 22, fontWeight: 'bold', color: '#001D1D' },
+  userHandleDisplay: { fontSize: 14, color: '#666', marginTop: 2, marginBottom: 4 },
+  userBioDisplay: { fontSize: 13, color: '#333', marginTop: 6, lineHeight: 19 },
+  websiteLink: { fontSize: 13, color: '#008E6D', marginTop: 5, textDecorationLine: 'underline' },
+  editButton: {
+    backgroundColor: '#008E6D',
+    flexDirection: 'row',
+    height: 52,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 20,
+    gap: 10,
+    // Full width of the content area — no hardcoded width * multiplier needed
+  },
+  editButtonText: { color: '#fff', fontWeight: 'bold', fontSize: 17 },
+  actionRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 25, gap: 10 },
+  darkActionButton: {
+    backgroundColor: '#012D2E',
+    minHeight: 95,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 14,
+    gap: 8,
+  },
+  actionText: { color: '#fff', fontSize: 13, fontWeight: 'bold', textAlign: 'center' },
+  guestCard: {
+    alignItems: 'center',
+    paddingVertical: 20, paddingHorizontal: 18,
+    borderRadius: 18, backgroundColor: '#f7faf9',
+    borderWidth: 1, borderColor: '#e6efec', marginTop: 12,
+  },
+  guestTitle: { fontSize: 18, fontWeight: '800', color: '#012D2E', marginTop: 10 },
+  guestText: { fontSize: 13, color: '#556', textAlign: 'center', marginTop: 6, lineHeight: 19 },
+  guestActions: { flexDirection: 'row', gap: 10, marginTop: 14 },
+  primaryBtn: { backgroundColor: '#008E6D', paddingHorizontal: 18, paddingVertical: 12, borderRadius: 999 },
+  primaryBtnText: { color: '#fff', fontWeight: '800' },
+  secondaryBtn: {
+    backgroundColor: '#fff', paddingHorizontal: 18, paddingVertical: 12,
+    borderRadius: 999, borderWidth: 1, borderColor: '#d8e2df',
+  },
+  secondaryBtnText: { color: '#012D2E', fontWeight: '800' },
+  optionsList: { marginTop: 4 },
+  optionItem: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: '#fff', padding: 12, borderRadius: 15, marginBottom: 10,
+    borderWidth: 1, borderColor: '#F0F0F0',
+  },
+  optionLeft: { flexDirection: 'row', alignItems: 'center', flex: 1 },
+  iconCircle: {
+    width: 38, height: 38, backgroundColor: '#008E6D',
+    borderRadius: 19, justifyContent: 'center', alignItems: 'center',
+    flexShrink: 0,
+  },
+  optionTextContainer: { marginLeft: 14, flex: 1, minWidth: 0 },
+  optionTitle: { fontSize: 14, fontWeight: 'bold', color: '#001D1D' },
+  logoutButton: {
+    marginTop: 30,
+    backgroundColor: '#ffe5e5',
+    paddingVertical: 15,
+    borderRadius: 12,
+    alignItems: 'center',
+  },
+  logoutText: {
+    color: '#ef4444',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  optionSub: { fontSize: 11, color: '#666', marginTop: 2 },
 });

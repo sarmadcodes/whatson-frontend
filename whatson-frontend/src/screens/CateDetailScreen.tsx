@@ -1,61 +1,85 @@
-import React from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Dimensions,
+  FlatList,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import ScreenWrapper from '../components/ScreenWrapper';
 import EventCard from '../components/EventCard';
-import Ionicons from '@react-native-vector-icons/ionicons';
+import Icon from '../components/Icon';
+import { fetchEvents, Event } from '../services/eventService';
 
-const CategoryDetailScreen = ({ route, navigation }) => {
-  // Extract the category name from params
+const { width } = Dimensions.get('window');
+
+// Two columns with consistent gutters on all screen sizes
+const HORIZONTAL_PADDING = 30; // 15 * 2
+const COLUMN_GAP = 12;
+const CARD_WIDTH = (width - HORIZONTAL_PADDING - COLUMN_GAP) / 2;
+
+const CategoryDetailScreen = ({ route, navigation }: { route: any; navigation: any }) => {
   const { categoryName } = route.params;
+  const [events, setEvents] = useState<Event[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  // Comprehensive dummy data
-  const allEvents = [
-    { id: '1', title: 'Live Rock Concert', category: 'Live Music', image: 'https://picsum.photos/200', location: 'London', timeLabel: '8PM' },
-    { id: '2', title: 'Jazz Night', category: 'Live Music', image: 'https://picsum.photos/201', location: 'Belfast', timeLabel: '7PM' },
-    { id: '3', title: 'Techno Underground', category: 'DJ Nightlife', image: 'https://picsum.photos/202', location: 'Manchester', timeLabel: '11PM' },
-    { id: '4', title: 'House Mix 101', category: 'DJ Nightlife', image: 'https://picsum.photos/203', location: 'London', timeLabel: '10PM' },
-    { id: '5', title: 'Standup Special', category: 'Comedy', image: 'https://picsum.photos/204', location: 'Bristol', timeLabel: '6PM' },
-    { id: '6', title: 'Street Food Fest', category: 'Food & drink', image: 'https://picsum.photos/205', location: 'London', timeLabel: '1PM' },
-  ];
-
-  // Filter logic: Only show events matching the category
-  const filteredEvents = allEvents.filter(event => event.category === categoryName);
+  useEffect(() => {
+    const load = async () => {
+      try {
+        const data = await fetchEvents({ category: categoryName, limit: 100 });
+        setEvents(data);
+      } catch (error) {
+        console.error('Category detail load error:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [categoryName]);
 
   return (
     <View style={styles.container}>
-      <ScreenWrapper
-        imageSource={require('../assets/homebg.png')}
-        backgroundColor="#FFFFFF"
-      >
-        {/* Header Section */}
+      <ScreenWrapper imageSource={require('../assets/homebg.png')} backgroundColor="#FFFFFF">
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backButton}>
-            <Ionicons name="arrow-back" size={24} color="#fff" />
+          <TouchableOpacity
+            onPress={() => navigation.goBack()}
+            style={styles.backButton}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+          >
+            <Icon name="arrow-back" size={22} color="#fff" />
           </TouchableOpacity>
-          <Text style={styles.headerTitle}>{categoryName}</Text>
-          <View style={{ width: 40 }} /> {/* Spacer for centering */}
+          <Text style={styles.headerTitle} numberOfLines={1}>{categoryName}</Text>
+          <View style={{ width: 38 }} />
         </View>
 
         <View style={styles.content}>
           <Text style={styles.sectionTitle}>{categoryName} Near You</Text>
-          
-          {filteredEvents.length > 0 ? (
+
+          {loading ? (
+            <ActivityIndicator size="large" color="#008E6D" style={{ marginTop: 50 }} />
+          ) : events.length > 0 ? (
             <FlatList
-              data={filteredEvents}
-              keyExtractor={(item) => item.id}
-              numColumns={2} // Grid layout
+              data={events}
+              keyExtractor={item => item._id}
+              numColumns={2}
               columnWrapperStyle={styles.row}
               renderItem={({ item }) => (
                 <View style={styles.cardContainer}>
-                    <EventCard data={item} onPress={() => navigation.navigate('Innerevetscreen')} />
+                  <EventCard
+                    data={item}
+                    onPress={() => navigation.navigate('Innerevetscreen', { eventId: item._id })}
+                  />
                 </View>
               )}
               showsVerticalScrollIndicator={false}
-              contentContainerStyle={{ paddingBottom: 100 }}
+              contentContainerStyle={styles.listContent}
             />
           ) : (
             <View style={styles.emptyContainer}>
-              <Ionicons name="calendar-outline" size={80} color="#ccc" />
+              {/* Responsive icon: clamp to 15% of screen width */}
+              <Icon name="calendar-outline" size={Math.min(80, width * 0.18)} color="#ccc" />
               <Text style={styles.emptyText}>No events found for {categoryName}</Text>
             </View>
           )}
@@ -68,15 +92,12 @@ const CategoryDetailScreen = ({ route, navigation }) => {
 export default CategoryDetailScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 15,
+    paddingVertical: 12,
   },
   backButton: {
     backgroundColor: 'rgba(255,255,255,0.2)',
@@ -84,36 +105,39 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   headerTitle: {
-    fontSize: 20,
+    fontSize: 19,
     fontWeight: '700',
     color: '#fff',
-  },
-  content: {
-    marginTop: 30,
     flex: 1,
+    textAlign: 'center',
+    marginHorizontal: 8,
   },
+  content: { marginTop: 20, flex: 1 },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '800',
     color: '#012D2E',
-    marginBottom: 15,
+    marginBottom: 14,
   },
   row: {
     justifyContent: 'space-between',
+    marginBottom: COLUMN_GAP,
   },
   cardContainer: {
-    width: '48%', // Ensures 2 items per row
-    marginBottom: 15,
+    width: CARD_WIDTH,
   },
+  listContent: { paddingBottom: 100 },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 100,
+    marginTop: 80,
+    paddingHorizontal: 20,
   },
   emptyText: {
-    fontSize: 16,
+    fontSize: 15,
     color: '#666',
-    marginTop: 10,
-  }
+    marginTop: 12,
+    textAlign: 'center',
+  },
 });
