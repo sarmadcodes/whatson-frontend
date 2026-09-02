@@ -5,6 +5,6 @@ import { REACT_APP_API_BASE_URL } from '@env';
 const DEV_API_BASE_URL = 'http://192.168.100.80:5000/api';
 // const DEV_API_BASE_URL = 'http://192.168.100.80:5000/api'; 
 
-const PROD_API_BASE_URL = 'https://resumes-lover-recall-ext.trycloudflare.com/api';
+const PROD_API_BASE_URL = 'https://api.whatson.threadique.live/api';
 
 export const API_BASE_URL = REACT_APP_API_BASE_URL || (__DEV__ ? DEV_API_BASE_URL : PROD_API_BASE_URL);
