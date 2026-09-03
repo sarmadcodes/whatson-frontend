@@ -271,7 +271,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.threadique.whatson;
+				PRODUCT_BUNDLE_IDENTIFIER = com.threadique.whatson2026;
 				PRODUCT_NAME = WhatsOn;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
@@ -298,7 +298,7 @@
 					"-ObjC",
 					"-lc++",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = com.threadique.whatson;
+				PRODUCT_BUNDLE_IDENTIFIER = com.threadique.whatson2026;
 				PRODUCT_NAME = WhatsOn;
 				SWIFT_VERSION = 5.0;
 				VERSIONING_SYSTEM = "apple-generic";
